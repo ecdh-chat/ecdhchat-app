@@ -1,0 +1,18 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "What the page may ask the app to do: notifications, its own settings, window controls, unread alerts, installing an update the person agreed to, and quitting. Links, invites and the tray are handled on the Rust side.",
+  "windows": ["main"],
+  "permissions": [
+    "notification:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-internal-toggle-maximize",
+    "allow-get-settings",
+    "allow-set-settings",
+    "allow-window-action",
+    "allow-set-unread",
+    "allow-quit-app",
+    "allow-get-update",
+    "allow-install-update"
+  ]
+}

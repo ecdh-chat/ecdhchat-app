@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="referrer" content="no-referrer">
+    <meta name="description" content="Contact ecdh.chat: general questions, press, and how to report a security issue.">
+    <title>Contact ecdh.chat</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="stylesheet" href="/theme.css">
+    <link rel="stylesheet" href="/site.css">
+    <script src="/js/theme-boot.js"></script>
+    <script type="module" src="/js/site.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="wrap">
+            <a class="brand" href="/about"><img src="/favicon.svg" alt="" width="28" height="28">ecdh.chat</a>
+            <nav class="site-nav" aria-label="Site">
+                <a href="/about">About</a>
+                <a href="/download">Download</a>
+            </nav>
+            <button id="themeToggle" class="icon-button theme-toggle" type="button" data-theme="system" aria-label="Theme" title="Theme">
+                <svg class="icon-system" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18V4a8 8 0 0 1 0 16z"/></svg>
+                <svg class="icon-light" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM7.05 18.01l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41z"/></svg>
+                <svg class="icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+            </button>
+            <a class="button primary" href="/">Open chat</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="wrap">
+            <div class="hero">
+                <p class="eyebrow">Contact</p>
+                <h1>Get in touch.</h1>
+                <p class="lede">Questions, feedback, press or a bug you've found: we read everything.</p>
+            </div>
+
+            <section aria-labelledby="write">
+                <div class="grid">
+                    <div class="card">
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg></span>
+                        <h2 id="write" class="card-title">General and press</h2>
+                        <p>Questions, ideas, feedback and press enquiries.</p>
+                        <p><a class="email" href="mailto:hello@ecdh.chat">hello@ecdh.chat</a></p>
+                    </div>
+                    <div class="card">
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></span>
+                        <h2 class="card-title">Security reports</h2>
+                        <p>Found a way to read, change or fake a chat, or to break the app or server? Please tell us first.</p>
+                        <p><a class="email" href="mailto:security@ecdh.chat">security@ecdh.chat</a></p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="security" aria-labelledby="policy">
+                <h2 id="policy">Reporting a security issue</h2>
+                <p class="section-intro">We take reports seriously and will work with you to fix problems quickly.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>What to include</h3>
+                        <ul>
+                            <li>What you found and what an attacker could do with it</li>
+                            <li>Steps to reproduce it, or a proof of concept</li>
+                            <li>The app version or the date you tested the website</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>What we ask</h3>
+                        <ul>
+                            <li>Test only with chats and devices you control</li>
+                            <li>Don't try to read other people's chats, and don't overload the service</li>
+                            <li>Give us a reasonable time to fix it before telling others</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>What you can expect</h3>
+                        <ul>
+                            <li>A reply, usually within a few days</li>
+                            <li>Updates while we work on a fix</li>
+                            <li>Credit for the find, if you'd like it</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="section-intro">For something sensitive, email us first and we'll set up an ecdh.chat conversation, so the details never sit in an inbox.</p>
+            </section>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap">
+            <span>ecdh.chat · private chat, encrypted end to end</span>
+            <nav aria-label="Footer">
+                <a href="/">Open chat</a>
+                <a href="/about">About</a>
+                <a href="/about#security">Security</a>
+                <a href="/download">Download</a>
+                <a href="/contact">Contact</a>
+                <a href="/privacy">Privacy</a>
+            </nav>
+        </div>
+    </footer>
+</body>
+</html>

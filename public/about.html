@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="referrer" content="no-referrer">
+    <meta name="description" content="How ecdh.chat works and keeps your chats private: end-to-end encryption, direct connections and nothing stored.">
+    <title>About ecdh.chat: private, peer-to-peer, encrypted</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="stylesheet" href="/theme.css">
+    <link rel="stylesheet" href="/site.css">
+    <script src="/js/theme-boot.js"></script>
+    <script type="module" src="/js/site.js"></script>
+</head>
+<body>
+    <header class="site-header">
+        <div class="wrap">
+            <a class="brand" href="/about"><img src="/favicon.svg" alt="" width="28" height="28">ecdh.chat</a>
+            <nav class="site-nav" aria-label="Site">
+                <a href="/about" aria-current="page">About</a>
+                <a href="/download">Download</a>
+            </nav>
+            <button id="themeToggle" class="icon-button theme-toggle" type="button" data-theme="system" aria-label="Theme" title="Theme">
+                <svg class="icon-system" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18V4a8 8 0 0 1 0 16z"/></svg>
+                <svg class="icon-light" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM7.05 18.01l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41z"/></svg>
+                <svg class="icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+            </button>
+            <a class="button primary" href="/">Open chat</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="wrap">
+            <div class="hero">
+                <p class="eyebrow">About ecdh.chat</p>
+                <h1>Private chat that leaves nothing behind.</h1>
+                <p class="lede">ecdh.chat connects two people directly, encrypts everything end to end, and keeps no accounts, no history and no copies. When the chat ends, it's gone.</p>
+                <div class="actions">
+                    <a class="button primary large" href="/">Start a chat</a>
+                    <a class="button secondary large" href="/download">Get the Windows app</a>
+                </div>
+            </div>
+
+            <section aria-labelledby="why">
+                <h2 id="why">Built around three promises</h2>
+                <p class="section-intro">No sign-up and no phone number. Open a link and talk, in your browser or in the Windows app.</p>
+                <div class="grid">
+                    <div class="card">
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM9 11h6v2H9z"/></svg></span>
+                        <h3>Straight to the other person</h3>
+                        <p>Messages, files, voice notes and calls travel directly between the two of you. Our server only introduces you, then steps out of the way.</p>
+                    </div>
+                    <div class="card">
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6zm3 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>
+                        <h3>Encrypted end to end</h3>
+                        <p>Fresh keys are made for every chat and never leave your device. Not even our server can read or change what you send.</p>
+                    </div>
+                    <div class="card">
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></span>
+                        <h3>Nothing is stored</h3>
+                        <p>No accounts, no message history, no backups. Messages live only on your two screens and disappear when the chat ends.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section aria-labelledby="how">
+                <h2 id="how">How a chat works</h2>
+                <p class="section-intro">Every chat follows the same short path.</p>
+                <ol class="steps">
+                    <li>
+                        <h3>You get a one-time invite link</h3>
+                        <p>It contains a random room name and a 128-bit secret. The secret sits after the <code>#</code>, the part of a link that browsers never send to a server.</p>
+                    </li>
+                    <li>
+                        <h3>The server introduces you</h3>
+                        <p>When the other person opens the link, the server passes the connection setup between your two devices. It never receives the secret.</p>
+                    </li>
+                    <li>
+                        <h3>Your devices connect directly</h3>
+                        <p>A peer-to-peer WebRTC connection is made. With <strong>Hide my IP</strong> on, it goes through our relay instead, which only ever sees encrypted data.</p>
+                    </li>
+                    <li>
+                        <h3>A fresh key exchange locks the chat</h3>
+                        <p>Both devices make new keys and mix in the secret from the link, so only someone holding that exact link can join the conversation.</p>
+                    </li>
+                    <li>
+                        <h3>You compare a 6-digit code</h3>
+                        <p>Read it to each other over a call or in person. If the codes match, nobody is in the middle, not even someone who got hold of the link.</p>
+                    </li>
+                    <li>
+                        <h3>Either of you ends it</h3>
+                        <p>Ending the chat wipes it from both screens. The link can't be used again.</p>
+                    </li>
+                </ol>
+            </section>
+
+            <section id="security" aria-labelledby="security-title">
+                <h2 id="security-title">Security in detail</h2>
+                <p class="section-intro">For people who want to check our work. All of this happens on your device, using the cryptography built into the browser (Web Crypto) and WebRTC.</p>
+                <div class="table-scroll">
+                    <table class="spec">
+                        <tr><th scope="row">Key exchange</th><td>Ephemeral ECDH on the P-256 curve, new for every chat. Private keys can't be exported and are discarded as soon as the chat keys are made.</td></tr>
+                        <tr><th scope="row">Commitment</th><td>Whoever made the room commits to their public key with SHA-256 before seeing the other one, so an attacker can't try key after key until the codes happen to match.</td></tr>
+                        <tr><th scope="row">Key derivation</th><td>HKDF with SHA-256. The salt is the 128-bit secret from the invite link. The context covers the room, both public keys and both WebRTC (DTLS) certificate fingerprints.</td></tr>
+                        <tr><th scope="row">Encryption</th><td>AES-256-GCM, with a separate key for each direction. A message counter is the nonce, so a replayed, dropped or reordered message fails to decrypt and the chat closes.</td></tr>
+                        <tr><th scope="row">Proof of matching keys</th><td>Each side's first encrypted message carries a hash of everything above. If anything differs, the chat closes before a single message is shown.</td></tr>
+                        <tr><th scope="row">Verification code</th><td>Six digits derived from the same keys and context. Matching codes prove the two of you are connected to each other directly.</td></tr>
+                        <tr><th scope="row">Calls</th><td>Audio and video use WebRTC's DTLS-SRTP encryption. Because the certificate fingerprints feed into the code, the code check covers calls too. Call setup travels over the encrypted chat, never through the server.</td></tr>
+                        <tr><th scope="row">Files and photos</th><td>Sent in encrypted chunks, up to 100 MB per file. Photos are redrawn before sending, which removes location and camera details, unless you choose to send the original.</td></tr>
+                        <tr><th scope="row">Invite links</th><td>A link works for one person only. An unused link expires after 30 minutes.</td></tr>
+                    </table>
+                </div>
+            </section>
+
+            <section aria-labelledby="sees">
+                <h2 id="sees">What our servers can and can't see</h2>
+                <p class="section-intro">Being clear about this matters more than sounding perfect.</p>
+                <div class="ledger">
+                    <div class="card">
+                        <h3><span class="tag good">Never</span> What stays private</h3>
+                        <ul>
+                            <li>Your messages, files, voice notes and calls</li>
+                            <li>The secret in your invite link</li>
+                            <li>Your encryption keys and verification code</li>
+                            <li>Who you are: there are no accounts, names or phone numbers</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3><span class="tag warn">Briefly</span> What the server handles</h3>
+                        <ul>
+                            <li>Your IP address and the other person's, while connecting</li>
+                            <li>The room name and when a chat starts</li>
+                            <li>Connection setup data: network addresses and certificate fingerprints</li>
+                            <li>With Hide my IP, the relay sees both IP addresses and how much encrypted data flows, but never what's in it</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="section-intro">Nothing goes into a database. Waiting rooms exist only in the server's memory, and our web server and relay don't keep logs of individual chats.</p>
+            </section>
+
+            <section aria-labelledby="web">
+                <h2 id="web">No trackers, no third parties</h2>
+                <div class="grid">
+                    <div class="card">
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 0 1 5 5c0 .65-.13 1.26-.36 1.83l2.92 2.92A11.82 11.82 0 0 0 23 12c-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46A11.8 11.8 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55A2.82 2.82 0 0 0 9 12a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.55 1.55A4.97 4.97 0 0 1 7 12c0-.79.2-1.53.53-2.2z"/></svg></span>
+                        <h3>Nothing watching you</h3>
+                        <p>No analytics, ads, cookies or tracking pixels. Nothing is loaded from other companies: no fonts, no scripts, and the connection checks run on our own server.</p>
+                    </div>
+                    <div class="card">
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></span>
+                        <h3>A locked-down page</h3>
+                        <p>HTTPS everywhere with HSTS, a strict Content Security Policy and Trusted Types, so text from the other person can never run as code on your screen.</p>
+                    </div>
+                    <div class="card">
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.48 10.36 4.5v7.06H3V5.48zm0 13.04 7.36 1V12.5H3v6.02zM11.25 4.37 21 3v8.56h-9.75V4.37zm0 15.26L21 21v-8.5h-9.75v7.13z"/></svg></span>
+                        <h3>Even tighter in the app</h3>
+                        <p>The Windows app carries its own copy of the code instead of loading it from the server. It can also hide its window from screenshots and screen sharing, and blur the chat when you look away.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section aria-labelledby="limits">
+                <h2 id="limits">Good to know</h2>
+                <p class="section-intro">Every tool has limits. These are ours.</p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>You both need to be online</h3>
+                        <p>No server holds your messages, so a chat happens live, while you both have it open.</p>
+                    </div>
+                    <div class="card">
+                        <h3>The other person can see your IP</h3>
+                        <p>That's how direct connections work. Turn on Hide my IP to send everything through our relay instead.</p>
+                    </div>
+                    <div class="card">
+                        <h3>The website trusts our server</h3>
+                        <p>Like any web app, the page comes from our server each time you open it. The Windows app avoids this by shipping its code with the app.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Your device has to be safe</h3>
+                        <p>Encryption can't protect against malware on a device, someone looking over your shoulder, or a camera pointed at the screen.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap">
+            <span>ecdh.chat · private chat, encrypted end to end</span>
+            <nav aria-label="Footer">
+                <a href="/">Open chat</a>
+                <a href="/about">About</a>
+                <a href="/about#security">Security</a>
+                <a href="/download">Download</a>
+                <a href="/contact">Contact</a>
+                <a href="/privacy">Privacy</a>
+            </nav>
+        </div>
+    </footer>
+</body>
+</html>

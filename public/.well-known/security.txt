@@ -1,0 +1,6 @@
+# How to report a security issue in ecdh.chat (RFC 9116). See the policy for what to include.
+Contact: mailto:security@ecdh.chat
+Expires: 2027-10-19T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://ecdh.chat/.well-known/security.txt
+Policy: https://ecdh.chat/contact#security

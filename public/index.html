@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="color-scheme" content="light dark">
+    <meta name="referrer" content="no-referrer">
+    <meta name="description" content="Private peer-to-peer chat, encrypted end to end. Nothing is stored.">
+    <title>ecdh.chat</title>
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="js/theme-boot.js"></script>
+    <script type="module" src="js/main.js"></script>
+</head>
+<body>
+    <div class="card" id="app">
+        <!-- In the desktop app the header is also the window's title bar (data-tauri-drag-region). -->
+        <header class="chat-header" data-tauri-drag-region>
+            <div class="chat-title-group" data-tauri-drag-region>
+                <h1 class="chat-title" data-tauri-drag-region>ecdh.chat</h1>
+                <button id="statusChip" class="status-chip" type="button" data-tone="neutral" disabled>
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <span id="statusText">Starting…</span>
+                </button>
+            </div>
+            <div class="header-actions">
+                <button id="voiceCallButton" class="icon-button" type="button" aria-label="Voice call" title="Voice call" hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                </button>
+                <button id="videoCallButton" class="icon-button" type="button" aria-label="Video call" title="Video call" hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                </button>
+                <button id="endButton" class="text-button danger" type="button" hidden>End chat</button>
+                <button id="settingsButton" class="icon-button" type="button" aria-label="Settings" title="Settings">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                </button>
+                <button id="infoButton" class="icon-button" type="button" aria-label="How it works" title="How it works">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-11h2V7h-2v2zm0 8h2v-6h-2v6z"/></svg>
+                </button>
+                <button id="themeToggle" class="icon-button theme-toggle" type="button" data-theme="system" aria-label="Theme" title="Theme">
+                    <svg class="icon-system" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18V4a8 8 0 0 1 0 16z"/></svg>
+                    <svg class="icon-light" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM7.05 18.01l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41z"/></svg>
+                    <svg class="icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+                </button>
+            </div>
+            <div id="windowControls" class="window-controls" hidden>
+                <button class="window-button" type="button" data-window-action="minimize" aria-label="Minimize" title="Minimize">
+                    <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 6h9"/></svg>
+                </button>
+                <button class="window-button" type="button" data-window-action="toggle-maximize" aria-label="Maximize" title="Maximize">
+                    <svg class="icon-maximize" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="9" height="9" rx="1"/></svg>
+                    <svg class="icon-restore" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 3.5V2.5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-1"/><rect x="1.5" y="3.5" width="7" height="7" rx="1"/></svg>
+                </button>
+                <button class="window-button close" type="button" data-window-action="close" aria-label="Close" title="Close">
+                    <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Desktop app only: a signed update is ready. Nothing installs until it's clicked. -->
+        <div id="updateBar" class="update-bar" role="status" hidden>
+            <span id="updateText"></span>
+            <button id="updateInstall" class="link-button" type="button">Update and restart</button>
+            <button id="updateLater" class="chip-remove" type="button" aria-label="Remind me later">✕</button>
+        </div>
+
+        <div class="chat-body">
+            <div id="callBanner" class="call-banner" role="alert" hidden>
+                <span id="callBannerText">Incoming call</span>
+                <div class="call-banner-actions">
+                    <button id="callAccept" class="primary-button" type="button">Accept</button>
+                    <button id="callDecline" class="secondary-button danger" type="button">Decline</button>
+                </div>
+            </div>
+
+            <main id="messages" class="chat-messages" aria-live="polite" aria-label="Messages">
+                <!-- These two always stay last; messages are inserted above them. -->
+                <div id="typingIndicator" class="typing-indicator" hidden>
+                    <span class="typing-bubble" role="img" aria-label="They’re typing">
+                        <span id="typingCipher" class="typing-cipher" aria-hidden="true"></span>
+                    </span>
+                </div>
+                <button id="jumpButton" class="jump-button" type="button" hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16.17l-5.59-5.58L5 12l7 7 7-7-1.41-1.41L12 16.17zM11 4h2v12h-2z"/></svg>
+                    <span id="jumpText">New messages</span>
+                </button>
+            </main>
+
+            <footer class="chat-footer">
+                <div id="replyBar" class="reply-bar" hidden>
+                    <div class="reply-text"><strong id="replyLabel"></strong> <span id="replySnippet"></span></div>
+                    <button id="replyCancel" class="chip-remove" type="button" aria-label="Cancel reply">✕</button>
+                </div>
+                <div id="attachments" class="attachments" hidden>
+                    <div id="attachmentList" class="attachment-list"></div>
+                    <label id="originalRow" class="toggle-row" hidden>
+                        <input type="checkbox" id="originalToggle">
+                        <span>Send images as original files <small>(keeps location and other hidden details)</small></span>
+                    </label>
+                </div>
+                <div id="composer" class="composer">
+                    <input type="file" id="fileInput" multiple hidden>
+                    <button id="attachButton" class="icon-button attach-button" type="button" aria-label="Attach files" title="Attach files" disabled>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-3.31 2.69-6 6-6s6 2.69 6 6v12.5c0 4.41-3.59 8-8 8s-8-3.59-8-8V6h2v11.5c0 3.31 2.69 6 6 6s6-2.69 6-6V5c0-2.21-1.79-4-4-4s-4 1.79-4 4v12.5c0 1.1.9 2 2 2s2-.9 2-2V6h2z"/></svg>
+                    </button>
+                    <textarea id="messageInput" rows="1" maxlength="10000" placeholder="Type a message…" aria-label="Message" disabled></textarea>
+                    <button id="micButton" class="icon-button attach-button" type="button" aria-label="Record a voice message" title="Record a voice message" disabled>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+                    </button>
+                    <button id="sendButton" class="primary-button" type="button" disabled>Send</button>
+                </div>
+                <div id="recordingBar" class="recording-bar" hidden>
+                    <span class="recording-dot" aria-hidden="true"></span>
+                    <span id="recordingTime" class="recording-time">0:00</span>
+                    <span class="recording-label">Recording a voice message</span>
+                    <button id="recordCancel" class="text-button" type="button">Cancel</button>
+                    <button id="recordSend" class="primary-button" type="button">Send</button>
+                </div>
+            </footer>
+
+            <section id="callScreen" class="call-screen" aria-label="Call" hidden>
+                <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
+                <video id="localVideo" class="local-video" autoplay playsinline muted></video>
+                <div class="call-voice" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                </div>
+                <div id="callStatus" class="call-status" aria-live="polite"></div>
+                <div class="call-controls">
+                    <button id="muteButton" class="call-button" type="button" aria-pressed="false" aria-label="Mute" title="Mute">
+                        <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+                        <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/></svg>
+                    </button>
+                    <button id="cameraButton" class="call-button" type="button" aria-pressed="false" aria-label="Turn camera off" title="Turn camera off">
+                        <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                        <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>
+                    </button>
+                    <button id="hangUpButton" class="call-button danger" type="button" aria-label="Hang up" title="Hang up">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+                    </button>
+                </div>
+            </section>
+
+            <section id="inviteScreen" class="overlay" aria-labelledby="inviteTitle" hidden>
+                <div class="panel">
+                    <h2 id="inviteTitle">Invite someone</h2>
+                    <p>Scan the code, or click the link to copy it and send it to the person you want to talk to.</p>
+                    <canvas id="qrCanvas" class="qr" role="img" aria-label="QR code of the invite link" hidden></canvas>
+                    <div id="inviteLink" class="url-display" role="button" tabindex="0" title="Click to copy">Creating a link…</div>
+                    <label class="toggle-row relay-option" hidden>
+                        <input type="checkbox" class="relay-toggle">
+                        <span>Hide my IP address <small>(sends the chat through a relay; can be slower)</small></span>
+                    </label>
+                    <button id="newRoomButton" class="link-button" type="button">Generate a new room</button>
+                    <div id="pasteInvite" class="paste-invite" hidden>
+                        <label for="pasteInput">Got a link from someone?</label>
+                        <div class="paste-row">
+                            <input id="pasteInput" type="text" placeholder="Paste their invite link" autocomplete="off" spellcheck="false">
+                            <button id="pasteButton" class="secondary-button" type="button">Join</button>
+                        </div>
+                        <p id="pasteError" class="fine-print" role="alert" hidden>That isn’t an invite link for this server.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="joinScreen" class="overlay" aria-labelledby="joinTitle" hidden>
+                <div class="panel">
+                    <h2 id="joinTitle">You’re invited to a private chat</h2>
+                    <p>Messages and files go straight to the other person, encrypted end to end. Nothing is stored, and the chat ends when either of you leaves.</p>
+                    <p id="ipNotice" class="fine-print"></p>
+                    <label class="toggle-row relay-option" hidden>
+                        <input type="checkbox" class="relay-toggle">
+                        <span>Hide my IP address <small>(sends the chat through a relay; can be slower)</small></span>
+                    </label>
+                    <button id="joinButton" class="primary-button" type="button">Join chat</button>
+                    <p id="openInApp" class="fine-print" hidden>Have the desktop app? <a id="openInAppLink" href="#">Open this invite in it</a></p>
+                </div>
+            </section>
+
+            <section id="endedScreen" class="overlay" aria-labelledby="endedTitle" data-tone="neutral" hidden>
+                <div class="panel">
+                    <h2 id="endedTitle">Chat ended</h2>
+                    <p id="endedText"></p>
+                    <button id="newChatButton" class="primary-button" type="button">Start a new chat</button>
+                </div>
+            </section>
+
+            <div id="dropOverlay" class="drop-overlay" hidden>Drop files to attach them</div>
+        </div>
+
+        <button id="privacyShield" class="privacy-shield" type="button" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+            <span>Click to show the chat</span>
+        </button>
+    </div>
+
+    <div id="messageMenu" class="message-menu" popover>
+        <div id="menuReactions" class="menu-reactions"></div>
+        <button id="menuReply" type="button">Reply</button>
+        <button id="menuCopy" type="button">Copy text</button>
+        <button id="menuDelete" class="danger" type="button">Delete for everyone</button>
+    </div>
+
+    <dialog id="verifyDialog" aria-labelledby="verifyTitle">
+        <h2 id="verifyTitle">Check the code</h2>
+        <p>Compare this code with the other person over a call or in person. If you both see the same code, nobody is listening in.</p>
+        <div id="verifyCode" class="verify-code"></div>
+        <p id="verifyStatus" class="fine-print" aria-live="polite"></p>
+        <div class="button-row">
+            <button id="matchButton" class="primary-button" type="button">Codes match</button>
+            <button id="mismatchButton" class="secondary-button danger" type="button">They don’t match</button>
+        </div>
+        <button class="link-button" type="button" data-close>Close</button>
+    </dialog>
+
+    <dialog id="settingsDialog" aria-labelledby="settingsTitle">
+        <h2 id="settingsTitle">Settings</h2>
+        <fieldset id="disappearGroup" class="setting-group" disabled>
+            <legend>Disappearing messages</legend>
+            <p class="fine-print">New messages vanish from both screens after this long.</p>
+            <div class="radio-row">
+                <label><input type="radio" name="disappear" value="0" checked> Off</label>
+                <label><input type="radio" name="disappear" value="30"> 30 seconds</label>
+                <label><input type="radio" name="disappear" value="300"> 5 minutes</label>
+                <label><input type="radio" name="disappear" value="3600"> 1 hour</label>
+            </div>
+        </fieldset>
+        <fieldset id="appSettings" class="setting-group" hidden>
+            <legend>App</legend>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="closeToTray"> <span>Keep running in the tray when closed <small>(your chat stays open)</small></span></label>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="launchAtStartup"> <span>Start with Windows <small>(waits quietly in the tray)</small></span></label>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="blockScreenshots"> <span>Block screenshots and screen sharing of this window</span></label>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="privacyBlur"> <span>Blur the chat when you switch to another window</span></label>
+        </fieldset>
+        <fieldset class="setting-group">
+            <legend id="backgroundLegend">When this tab is in the background</legend>
+            <label class="toggle-row"><input type="checkbox" id="soundToggle"> <span>Play a sound for new messages and calls</span></label>
+            <label class="toggle-row"><input type="checkbox" id="notifyToggle"> <span>Show a notification <small>(it never includes the message)</small></span></label>
+            <p id="notifyNote" class="fine-print" hidden>Notifications are blocked for this site in your browser’s settings.</p>
+        </fieldset>
+        <button class="primary-button" type="button" data-close>Done</button>
+    </dialog>
+
+    <dialog id="infoDialog" aria-labelledby="infoTitle">
+        <h2 id="infoTitle">How it works</h2>
+        <ul class="info-list">
+            <li><strong>A direct connection.</strong> Your browser connects straight to the other person’s. The server only introduces you and never sees your messages, files or calls.</li>
+            <li><strong>A key in the link.</strong> Part of the invite link never reaches the server. Both browsers use it to lock the connection, so the server can’t read or change anything.</li>
+            <li><strong>Encrypted end to end.</strong> Messages and files are encrypted with keys made fresh for this chat (ECDH P-256 and AES-256-GCM). Calls use WebRTC’s built-in encryption, and the code check covers them too. Nothing is stored, and closing the tab ends the chat.</li>
+            <li><strong>Check the code.</strong> If someone else got hold of the link, comparing the 6-digit code over a call or in person shows whether anyone is in the middle.</li>
+            <li><strong>One-time links.</strong> A link works for one person and expires if nobody uses it.</li>
+            <li><strong>Good to know.</strong> Without Hide my IP, the other person can see your IP address. And as with any website, you’re trusting this server to send you the real app.</li>
+        </ul>
+        <p class="fine-print"><a id="aboutLink" href="/about#security" target="_blank" rel="noopener">Read the full security details</a> · <a id="downloadLink" href="/download" target="_blank" rel="noopener">Get the Windows app</a></p>
+        <button class="primary-button" type="button" data-close>Got it</button>
+    </dialog>
+
+    <dialog id="welcomeDialog" aria-labelledby="welcomeTitle">
+        <h2 id="welcomeTitle">Welcome to ecdh.chat</h2>
+        <p>Chats go straight to the other person, encrypted end to end, and nothing is stored. Choose how the app behaves. You can change this any time in Settings.</p>
+        <fieldset class="setting-group">
+            <legend>App</legend>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="closeToTray"> <span>Keep running in the tray when closed <small>(your chat stays open)</small></span></label>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="launchAtStartup"> <span>Start with Windows <small>(waits quietly in the tray)</small></span></label>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="blockScreenshots"> <span>Block screenshots and screen sharing of this window</span></label>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="privacyBlur"> <span>Blur the chat when you switch to another window</span></label>
+            <label class="toggle-row"><input type="checkbox" id="welcomeNotify"> <span>Show a notification for new messages <small>(it never includes the message)</small></span></label>
+        </fieldset>
+        <button id="welcomeDone" class="primary-button" type="button" autofocus>Get started</button>
+    </dialog>
+
+    <dialog id="appConfirmDialog" aria-labelledby="appConfirmTitle">
+        <h2 id="appConfirmTitle"></h2>
+        <p id="appConfirmText"></p>
+        <div class="button-row">
+            <button id="appConfirmButton" class="primary-button danger" type="button"></button>
+            <button class="secondary-button" type="button" data-close>Cancel</button>
+        </div>
+    </dialog>
+
+    <dialog id="confirmEndDialog" aria-labelledby="confirmEndTitle">
+        <h2 id="confirmEndTitle">End this chat?</h2>
+        <p>The chat ends for both of you and its messages are cleared. It can’t be reopened.</p>
+        <div class="button-row">
+            <button id="confirmEndButton" class="primary-button danger" type="button">End chat</button>
+            <button class="secondary-button" type="button" data-close>Keep chatting</button>
+        </div>
+    </dialog>
+
+    <dialog id="lightbox" class="lightbox" aria-label="Image preview">
+        <img id="lightboxImage" alt="">
+        <div class="button-row">
+            <a id="lightboxDownload" class="secondary-button" download>Download</a>
+            <button class="secondary-button" type="button" data-close>Close</button>
+        </div>
+    </dialog>
+</body>
+</html>

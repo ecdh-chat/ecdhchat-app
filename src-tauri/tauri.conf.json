@@ -1,0 +1,66 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "ecdh.chat",
+  "mainBinaryName": "ecdh-chat",
+  "version": "3.1.0",
+  "identifier": "chat.ecdh.desktop",
+  "build": {
+    "frontendDist": "../public"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost https://ecdh.chat wss://ecdh.chat; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'",
+      "devCsp": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost http://localhost:3000 ws://localhost:3000; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'"
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "ecdhchat"
+        ]
+      }
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDA0ODU1ODc5NjUzMDU5RjUKUldUMVdUQmxlVmlGQktSTWtKMWw0b2FsK0xwSkF5RncyYkZBckd4QVZML1dwSjBpZUVXbEtqcEIK",
+      "endpoints": [
+        "https://ecdh.chat/downloads/update.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "shortDescription": "Peer-to-peer end-to-end encrypted chat",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "ecdh.chat",
+    "copyright": "Copyright © 2026 god@ecdh.chat",
+    "homepage": "https://ecdh.chat",
+    "licenseFile": "../LICENSE",
+    "longDescription": "Private peer-to-peer chat, encrypted end to end. Nothing is stored.",
+    "windows": {
+      "nsis": {
+        "installMode": "both",
+        "startMenuFolder": "ecdh.chat",
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp",
+        "installerHooks": "installer/hooks.nsh",
+        "compression": "lzma"
+      }
+    },
+    "createUpdaterArtifacts": false
+  }
+}
