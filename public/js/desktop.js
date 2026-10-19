@@ -23,6 +23,11 @@ export async function initDesktop({ busy, leave, newChat, openSettings }) {
     const toggles = document.querySelectorAll('[data-app-setting]');
     const render = () => {
         for (const toggle of toggles) toggle.checked = Boolean(settings[toggle.dataset.appSetting]);
+        // Windows leaves this window out of every capture while screenshots are blocked, including
+        // your own screen share, so the note says why it's missing there.
+        $('sharingNote').textContent = settings.blockScreenshots
+            ? "You're sharing your screen · ecdh.chat itself stays hidden from it"
+            : "You're sharing your screen";
     };
     render();
     for (const toggle of toggles) {

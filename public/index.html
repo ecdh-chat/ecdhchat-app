@@ -94,6 +94,10 @@
                     <div class="reply-text"><strong id="replyLabel"></strong> <span id="replySnippet"></span></div>
                     <button id="replyCancel" class="chip-remove" type="button" aria-label="Cancel reply">✕</button>
                 </div>
+                <div id="editBar" class="reply-bar" hidden>
+                    <div class="reply-text"><strong>Editing message</strong> <span>Enter saves, Esc cancels</span></div>
+                    <button id="editCancel" class="chip-remove" type="button" aria-label="Cancel editing">✕</button>
+                </div>
                 <div id="attachments" class="attachments" hidden>
                     <div id="attachmentList" class="attachment-list"></div>
                     <label id="originalRow" class="toggle-row" hidden>
@@ -107,6 +111,9 @@
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-3.31 2.69-6 6-6s6 2.69 6 6v12.5c0 4.41-3.59 8-8 8s-8-3.59-8-8V6h2v11.5c0 3.31 2.69 6 6 6s6-2.69 6-6V5c0-2.21-1.79-4-4-4s-4 1.79-4 4v12.5c0 1.1.9 2 2 2s2-.9 2-2V6h2z"/></svg>
                     </button>
                     <textarea id="messageInput" rows="1" maxlength="10000" placeholder="Type a message…" aria-label="Message" disabled></textarea>
+                    <button id="emojiButton" class="icon-button attach-button" type="button" aria-label="Emoji" title="Emoji" disabled>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-3.5-9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm7 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM12 17.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+                    </button>
                     <button id="micButton" class="icon-button attach-button" type="button" aria-label="Record a voice message" title="Record a voice message" disabled>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
                     </button>
@@ -128,6 +135,7 @@
                     <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
                 </div>
                 <div id="callStatus" class="call-status" aria-live="polite"></div>
+                <div id="sharingNote" class="sharing-note" hidden>You're sharing your screen</div>
                 <div class="call-controls">
                     <button id="muteButton" class="call-button" type="button" aria-pressed="false" aria-label="Mute" title="Mute">
                         <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
@@ -136,6 +144,9 @@
                     <button id="cameraButton" class="call-button" type="button" aria-pressed="false" aria-label="Turn camera off" title="Turn camera off">
                         <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
                         <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>
+                    </button>
+                    <button id="shareButton" class="call-button" type="button" aria-pressed="false" aria-label="Share your screen" title="Share your screen" hidden>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2H0v2h24v-2h-4zM4 16V6h16v10.01L4 16zm9-6.87c-3.89.54-5.44 3.2-6 5.87 1.39-1.87 3.22-2.72 6-2.72v2.19l4-3.74L13 7v2.13z"/></svg>
                     </button>
                     <button id="hangUpButton" class="call-button danger" type="button" aria-label="Hang up" title="Hang up">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
@@ -199,8 +210,14 @@
     <div id="messageMenu" class="message-menu" popover>
         <div id="menuReactions" class="menu-reactions"></div>
         <button id="menuReply" type="button">Reply</button>
+        <button id="menuEdit" type="button">Edit</button>
         <button id="menuCopy" type="button">Copy text</button>
         <button id="menuDelete" class="danger" type="button">Delete for everyone</button>
+    </div>
+
+    <div id="emojiPicker" class="emoji-picker" popover aria-label="Emoji">
+        <div id="emojiTabs" class="emoji-tabs" role="tablist"></div>
+        <div id="emojiGrid" class="emoji-grid"></div>
     </div>
 
     <dialog id="verifyDialog" aria-labelledby="verifyTitle">
@@ -237,8 +254,20 @@
         <fieldset class="setting-group">
             <legend id="backgroundLegend">When this tab is in the background</legend>
             <label class="toggle-row"><input type="checkbox" id="soundToggle"> <span>Play a sound for new messages and calls</span></label>
+            <label class="select-row"><span>Sound</span>
+                <select id="toneSelect">
+                    <option value="chime">Chime</option>
+                    <option value="soft">Soft</option>
+                    <option value="pop">Pop</option>
+                    <option value="bell">Bell</option>
+                </select>
+            </label>
             <label class="toggle-row"><input type="checkbox" id="notifyToggle"> <span>Show a notification <small>(it never includes the message)</small></span></label>
             <p id="notifyNote" class="fine-print" hidden>Notifications are blocked for this site in your browser’s settings.</p>
+        </fieldset>
+        <fieldset class="setting-group">
+            <legend>Privacy</legend>
+            <label class="toggle-row"><input type="checkbox" id="readReceiptsToggle"> <span>Send and see read receipts <small>(only works when you both turn it on)</small></span></label>
         </fieldset>
         <button class="primary-button" type="button" data-close>Done</button>
     </dialog>

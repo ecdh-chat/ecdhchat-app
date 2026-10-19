@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHUNK_SIZE, MAX_FILE_SIZE, MAX_TEXT_LENGTH } from '../public/js/config.js';
-import { MessageType, ProtocolError, decode, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from '../public/js/messages.js';
+import { FEATURES, MessageType, ProtocolError, decode, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from '../public/js/messages.js';
 
 const id = randomId();
 const other = randomId();
@@ -39,8 +39,6 @@ describe('chat messages', () => {
 
     test('reject anything malformed', () => {
         const bad = [
-            Uint8Array.of(),
-            Uint8Array.of(99),
             raw(MessageType.TEXT, '{'),
             Uint8Array.of(MessageType.TEXT, 0xff, 0xfe),
             raw(MessageType.TEXT, '[]'),
@@ -75,9 +73,49 @@ describe('chat messages', () => {
             encode(MessageType.RTC, { description: { type: 'pranswer', sdp: 'v=0' } }),
             encode(MessageType.RTC, { description: { type: 'offer', sdp: '' } }),
             encode(MessageType.RTC, { description: { type: 'offer', sdp: 'x'.repeat(40000) } }),
+            encode(MessageType.SETTINGS, { disappearAfter: 0, version: 0, features: 'edit' }),
+            encode(MessageType.SETTINGS, { disappearAfter: 0, version: 0, features: [1] }),
+            encode(MessageType.SETTINGS, { disappearAfter: 0, version: 0, features: Array(33).fill('edit') }),
+            encode(MessageType.EDIT, { id, text: '' }),
+            encode(MessageType.EDIT, { id: 'nope', text: 'hi' }),
+            encode(MessageType.EDIT, { id, text: 'x'.repeat(MAX_TEXT_LENGTH + 1) }),
+            encode(MessageType.PREFS, { readReceipts: 'yes' }),
+            encode(MessageType.SEEN, { id: 'nope' }),
+            encode(MessageType.CALL, { action: 'screen-share', video: true }),
         ];
         for (const bytes of bad) {
             assert.throws(() => decode(bytes), ProtocolError, `accepted ${Array.from(bytes.slice(0, 12))}`);
         }
+    });
+
+    test('decode new message types', () => {
+        assert.deepEqual(decode(encode(MessageType.EDIT, { id, text: 'fixed typo' })), { type: MessageType.EDIT, id, text: 'fixed typo' });
+        assert.deepEqual(decode(encode(MessageType.PREFS, { readReceipts: true })), { type: MessageType.PREFS, readReceipts: true });
+        assert.deepEqual(decode(encode(MessageType.SEEN, { id })), { type: MessageType.SEEN, id });
+        for (const action of ['screen-on', 'screen-off']) {
+            assert.deepEqual(decode(encode(MessageType.CALL, { action, video: true })), { type: MessageType.CALL, action, video: true });
+        }
+    });
+
+    test('features are read from SETTINGS, keeping only ones this version knows', () => {
+        const settings = decode(encode(MessageType.SETTINGS, { disappearAfter: 0, version: 0, features: ['edit', 'teleport', 'screen'] }));
+        assert.deepEqual(settings.features, ['edit', 'screen']);
+        assert.equal(decode(encode(MessageType.SETTINGS, { disappearAfter: 30, version: 2 })).features, undefined);
+    });
+
+    test('types from a newer version are ignored instead of ending the chat', () => {
+        assert.equal(decode(Uint8Array.of(99)), null);
+        assert.equal(decode(encode(200, { anything: true })), null);
+        assert.equal(decode(Uint8Array.of()), null);
+    });
+
+    test('the feature announcement is accepted by 3.1.1, which ignores the extra field', async () => {
+        const old = await import('./fixtures/messages-3.1.1.js');
+        const announcement = encode(MessageType.SETTINGS, { disappearAfter: 0, version: 0, features: FEATURES });
+        assert.deepEqual(old.decode(announcement), { type: old.MessageType.SETTINGS, disappearAfter: 0, version: 0 });
+        // Features only go to apps that announced them, so 3.1.1 never receives these; if it did,
+        // it would end the chat. That's why they're gated.
+        assert.throws(() => old.decode(encode(MessageType.EDIT, { id, text: 'x' })), old.ProtocolError);
+        assert.throws(() => old.decode(encode(MessageType.CALL, { action: 'screen-on', video: true })), old.ProtocolError);
     });
 });

@@ -1,12 +1,13 @@
 import * as alerts from './alerts.js';
 import { CALL_RING_TIMEOUT_MS } from './config.js';
-import { getCallMedia } from './media.js';
+import { getCallMedia, getScreenMedia } from './media.js';
 import { MessageType, encode } from './messages.js';
 
 const $ = (id) => document.getElementById(id);
 
 // A voice or video call on top of the open Connection. Camera and microphone are only on while
-// a call is ringing or active.
+// a call is ringing or active. Either person can share a screen during the call, if both apps
+// support it; it travels on the same encrypted connection the code check covers.
 //
 // state: idle → outgoing | incoming → active → idle
 export class Call {
@@ -21,6 +22,8 @@ export class Call {
         this.timer = null;
         this.clock = null;
         this.startedAt = 0;
+        this.screen = null;
+        this.screenAllowed = false;
         this.els = {
             banner: $('callBanner'),
             bannerText: $('callBannerText'),
@@ -30,12 +33,54 @@ export class Call {
             status: $('callStatus'),
             mute: $('muteButton'),
             camera: $('cameraButton'),
+            share: $('shareButton'),
+            sharing: $('sharingNote'),
         };
         $('callAccept').onclick = () => this.accept();
         $('callDecline').onclick = () => this.decline();
         $('hangUpButton').onclick = () => this.hangUp();
         this.els.mute.onclick = () => this.toggle('audio', this.els.mute);
         this.els.camera.onclick = () => this.toggle('video', this.els.camera);
+        this.els.share.onclick = () => (this.screen ? this.stopSharing() : this.startSharing());
+    }
+
+    // Set once the other app has said whether it supports screen sharing.
+    setScreenSharing(allowed) {
+        this.screenAllowed = allowed && Boolean(navigator.mediaDevices?.getDisplayMedia);
+        this.els.share.hidden = !this.screenAllowed || this.state !== 'active';
+    }
+
+    async startSharing() {
+        if (this.state !== 'active' || !this.screenAllowed || this.screen) return;
+        let screen;
+        try {
+            screen = await getScreenMedia();
+        } catch {
+            return; // The person closed the picker.
+        }
+        if (this.state !== 'active') return screen.getTracks().forEach((track) => track.stop());
+        this.screen = screen;
+        const [track] = screen.getVideoTracks();
+        // The browser's own "Stop sharing" button ends the track.
+        track.addEventListener('ended', () => this.stopSharing());
+        await this.connection.peer.setVideoTrack(track, screen).catch(() => {});
+        this.send('screen-on');
+        this.els.screen.classList.add('sharing');
+        this.els.sharing.hidden = false;
+        this.setPressed(this.els.share, true);
+    }
+
+    async stopSharing() {
+        if (!this.screen) return;
+        for (const track of this.screen.getTracks()) track.stop();
+        this.screen = null;
+        this.els.screen.classList.remove('sharing');
+        this.els.sharing.hidden = true;
+        this.setPressed(this.els.share, false);
+        if (this.state !== 'active') return;
+        const camera = this.video ? this.local?.getVideoTracks()[0] ?? null : null;
+        await this.connection.peer.setVideoTrack(camera, this.local).catch(() => {});
+        this.send('screen-off');
     }
 
     async start(video) {
@@ -82,6 +127,12 @@ export class Call {
                 if (this.state !== 'outgoing') return;
                 this.reset();
                 this.onSystem(action === 'busy' ? 'They’re busy right now.' : 'Call declined.');
+                break;
+            case 'screen-on':
+            case 'screen-off':
+                if (this.state !== 'active') return;
+                this.els.screen.classList.toggle('remote-sharing', action === 'screen-on');
+                if (action === 'screen-on') this.playRemote();
                 break;
             case 'end': {
                 if (this.state === 'idle') return;
@@ -149,6 +200,11 @@ export class Call {
     reset() {
         clearTimeout(this.timer);
         clearInterval(this.clock);
+        for (const track of this.screen?.getTracks() ?? []) track.stop();
+        this.screen = null;
+        this.els.screen.classList.remove('sharing', 'remote-sharing');
+        this.els.sharing.hidden = true;
+        this.els.share.hidden = true;
         this.stopLocal();
         this.connection.peer.setLocalMedia(null);
         this.els.banner.hidden = true;
@@ -167,10 +223,12 @@ export class Call {
         this.els.screen.hidden = false;
         this.els.screen.classList.toggle('voice', !this.video);
         this.els.camera.hidden = !this.video;
+        this.els.share.hidden = !this.screenAllowed || this.state !== 'active';
         this.els.localVideo.srcObject = this.video ? this.local : null;
         this.els.status.textContent = status;
         this.setPressed(this.els.mute, false);
         this.setPressed(this.els.camera, false);
+        this.setPressed(this.els.share, false);
     }
 
     playRemote() {
@@ -188,7 +246,12 @@ export class Call {
     }
 
     setPressed(button, pressed) {
-        const label = button === this.els.mute ? (pressed ? 'Unmute' : 'Mute') : (pressed ? 'Turn camera on' : 'Turn camera off');
+        const labels = {
+            [this.els.mute.id]: pressed ? 'Unmute' : 'Mute',
+            [this.els.camera.id]: pressed ? 'Turn camera on' : 'Turn camera off',
+            [this.els.share.id]: pressed ? 'Stop sharing your screen' : 'Share your screen',
+        };
+        const label = labels[button.id];
         button.setAttribute('aria-pressed', String(pressed));
         button.setAttribute('aria-label', label);
         button.title = label;

@@ -110,8 +110,10 @@ export class Connection {
         }
         if (!message) return;
 
-        // Anything that fails in here closes the chat as tampered.
+        // Anything that fails in here closes the chat as tampered. A type from a newer version is
+        // skipped.
         const decoded = decode(message);
+        if (!decoded) return;
         if (decoded.type === MessageType.BYE) return this.close(decoded.reason === 'mismatch' ? 'peer-mismatch' : 'peer-ended');
         if (decoded.type === MessageType.RTC) return this.handleRtc(decoded.description);
         this.handlers.onMessage(decoded);

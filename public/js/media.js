@@ -7,6 +7,11 @@ export function getCallMedia(video) {
     });
 }
 
+// Asks which screen or window to share. Audio isn't shared.
+export function getScreenMedia() {
+    return navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 15, max: 30 } }, audio: false });
+}
+
 // Records a voice message. stop() resolves to the recording; cancel() throws it away.
 export async function startRecording() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });

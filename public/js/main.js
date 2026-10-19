@@ -2,10 +2,11 @@ import * as alerts from './alerts.js';
 import { Call } from './call.js';
 import { INLINE_AUDIO_TYPES, INLINE_IMAGE_TYPES, MAX_FILE_SIZE, MAX_RECORDING_MS, TYPING_DISPLAY_MS, TYPING_SEND_INTERVAL_MS } from './config.js';
 import { Connection } from './connection.js';
+import { ask, initDesktop } from './desktop.js';
+import { plainText } from './format.js';
 import { cleanImage } from './images.js';
 import { startRecording, voiceMessageName } from './media.js';
-import { MessageType, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from './messages.js';
-import { ask, initDesktop } from './desktop.js';
+import { FEATURES, MessageType, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from './messages.js';
 import { inviteFragment, isApp, serverOrigin } from './platform.js';
 import { decodeBase64Url, encodeBase64Url, randomSecret } from './secure-channel.js';
 import { connectSignaling } from './signaling.js';
@@ -23,6 +24,10 @@ const PHASE_STATUS = {
     connecting: 'Connecting…',
 };
 const DURATIONS = { 30: '30 seconds', 300: '5 minutes', 3600: '1 hour' };
+// Your own messages can be edited for 15 minutes; theirs are accepted with a minute's slack.
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
+const EDIT_ACCEPT_MS = 16 * 60 * 1000;
+const SEEN_DELAY_MS = 400;
 
 // phase: starting → (creator) inviting | (joiner) invited → joining → connecting → open → ended
 let phase = 'starting';
@@ -43,6 +48,13 @@ let typingTimer = null;
 let typingSent = false;
 let typingSentAt = 0;
 let fileQueue = Promise.resolve();
+// What the other person's app announced it can do (see FEATURES in messages.js).
+let peerFeatures = [];
+let editing = null;
+let readReceipts = ui.readReceiptsPreference();
+let peerReadReceipts = false;
+let seenTimer = null;
+let lastSeenSent = null;
 const messages = new Map();
 
 initTheme(document.getElementById('themeToggle'));
@@ -62,6 +74,11 @@ ui.init({
     onDisappear: setDisappearing,
     onRecord: record,
     onCall: (video) => call?.start(video),
+    onStartEdit: startEdit,
+    onEditLast: editLast,
+    onCancelEdit: cancelEdit,
+    onReadReceipts: setReadReceipts,
+    onForeground: sendSeen,
     onPasteInvite: pasteInvite,
 });
 window.addEventListener('pagehide', () => {
@@ -215,6 +232,9 @@ function connectionOpened() {
             updateControls();
         },
     });
+    // Older apps read only the fields they know from SETTINGS, so this is how both sides learn
+    // what the other can do without upsetting a version that can't.
+    sendMessage(encode(MessageType.SETTINGS, { ...settings, features: FEATURES }));
     updateStatus();
     updateControls();
 }
@@ -325,6 +345,16 @@ function receive(message) {
         case MessageType.CALL:
             call?.handleMessage(message);
             break;
+        case MessageType.EDIT:
+            edited(message);
+            break;
+        case MessageType.PREFS:
+            peerReadReceipts = message.readReceipts;
+            seenSettingChanged();
+            break;
+        case MessageType.SEEN:
+            if (bothSeeReceipts() && messages.get(message.id)?.from === 'me') ui.markSeen(message.id);
+            break;
     }
 }
 
@@ -335,6 +365,10 @@ function sendMessage(bytes) {
 
 function send({ text, files, original }) {
     if (phase !== 'open') return;
+    if (editing) {
+        finishEdit(text);
+        return;
+    }
     stopTyping();
     const reply = replyTo;
     replyTo = null;
@@ -356,12 +390,96 @@ function sendText(text, reply) {
 }
 
 function remember(id, message) {
-    messages.set(id, { id, reactions: new Map(), timer: null, deleted: false, ...message });
+    messages.set(id, { id, reactions: new Map(), timer: null, deleted: false, at: Date.now(), ...message });
 }
 
 function incoming() {
     ui.noteIncoming();
     alerts.alertMessage();
+    sendSeen();
+}
+
+function hasFeature(name) {
+    return peerFeatures.includes(name);
+}
+
+function setPeerFeatures(features) {
+    peerFeatures = features;
+    ui.setFeatures({ edit: hasFeature('edit') });
+    call?.setScreenSharing(hasFeature('screen'));
+    if (hasFeature('seen')) sendMessage(encode(MessageType.PREFS, { readReceipts }));
+}
+
+// Editing: only your own text messages, only for 15 minutes, only with an app that understands it.
+function canEdit(message) {
+    return hasFeature('edit') && message?.from === 'me' && message.kind === 'text' && !message.deleted && Date.now() - message.at < EDIT_WINDOW_MS;
+}
+
+function startEdit(id) {
+    const message = messages.get(id);
+    if (phase !== 'open' || !canEdit(message)) return;
+    editing = id;
+    replyTo = null;
+    ui.startEdit(message.text);
+}
+
+function editLast() {
+    const mine = [...messages.values()].reverse().find((message) => message.from === 'me' && message.kind === 'text' && !message.deleted);
+    if (mine && canEdit(mine)) startEdit(mine.id);
+}
+
+function cancelEdit() {
+    editing = null;
+    ui.clearEdit();
+}
+
+function finishEdit(text) {
+    const message = messages.get(editing);
+    cancelEdit();
+    if (!text || !canEdit(message) || text === message.text) return;
+    message.text = text;
+    ui.editMessage(message.id, text);
+    sendMessage(encode(MessageType.EDIT, { id: message.id, text }));
+}
+
+// Their edit is only taken for their own, still-visible text message, sent less than 16 minutes ago.
+function edited({ id, text }) {
+    const message = messages.get(id);
+    if (!message || message.from !== 'them' || message.kind !== 'text' || message.deleted || Date.now() - message.at > EDIT_ACCEPT_MS) return;
+    message.text = text;
+    ui.editMessage(id, text);
+}
+
+// "Seen" works only when both people have it on, and only reports messages you've actually had
+// in front of you: the window in the foreground and the newest message in view.
+function bothSeeReceipts() {
+    return readReceipts && peerReadReceipts && hasFeature('seen');
+}
+
+function setReadReceipts(on) {
+    readReceipts = on;
+    if (phase === 'open' && hasFeature('seen')) sendMessage(encode(MessageType.PREFS, { readReceipts }));
+    seenSettingChanged();
+}
+
+function seenSettingChanged() {
+    if (!bothSeeReceipts()) {
+        ui.clearSeen();
+        lastSeenSent = null;
+        return;
+    }
+    sendSeen();
+}
+
+function sendSeen() {
+    clearTimeout(seenTimer);
+    seenTimer = setTimeout(() => {
+        if (phase !== 'open' || !bothSeeReceipts() || !ui.newestInView()) return;
+        const newest = [...messages.values()].reverse().find((message) => message.from === 'them' && !message.deleted);
+        if (!newest || newest.id === lastSeenSent) return;
+        lastSeenSent = newest.id;
+        sendMessage(encode(MessageType.SEEN, { id: newest.id }));
+    }, SEEN_DELAY_MS);
 }
 
 function label(from) {
@@ -402,7 +520,7 @@ function quoteFor(id) {
     if (!id) return null;
     const message = messages.get(id);
     if (!message || message.deleted) return { id, label: '', snippet: 'Original message isn’t available' };
-    const snippet = message.kind === 'text' ? message.text
+    const snippet = message.kind === 'text' ? plainText(message.text)
         : message.kind === 'audio' ? 'Voice message'
         : message.kind === 'image' ? (message.text ? `Photo: ${message.text}` : 'Photo')
         : `File: ${message.name}`;
@@ -481,7 +599,8 @@ function setDisappearing(seconds) {
 
 // The newest change wins on both sides. If both of you change it at the same moment, the
 // change from whoever made the room wins.
-function applySettings({ disappearAfter, version }) {
+function applySettings({ disappearAfter, version, features }) {
+    if (features) setPeerFeatures(features);
     if (version < settings.version || (version === settings.version && connection.role === 'creator')) return;
     const changed = disappearAfter !== settings.disappearAfter;
     settings = { disappearAfter, version };

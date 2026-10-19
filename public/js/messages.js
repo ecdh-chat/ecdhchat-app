@@ -15,11 +15,18 @@ export const MessageType = Object.freeze({
     SETTINGS: 11,
     CALL: 12,
     RTC: 13,
+    EDIT: 14,
+    PREFS: 15,
+    SEEN: 16,
 });
+
+// What each side can do beyond 3.1. They're announced inside SETTINGS, whose extra fields older
+// apps ignore, and a feature is only used when both sides announce it.
+export const FEATURES = ['edit', 'seen', 'screen'];
 
 export const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 export const DISAPPEAR_OPTIONS = [0, 30, 300, 3600];
-const CALL_ACTIONS = ['invite', 'accept', 'decline', 'end', 'busy'];
+const CALL_ACTIONS = ['invite', 'accept', 'decline', 'end', 'busy', 'screen-on', 'screen-off'];
 const MAX_SDP = 32 * 1024;
 const MAX_VERSION = 1e9;
 
@@ -59,7 +66,9 @@ export function encodeChunk(id, index, data) {
     return bytes;
 }
 
-// Everything decoded here came from a peer, so every field is checked.
+// Everything decoded here came from a peer, so every field is checked. A type this version doesn't
+// know returns null and is ignored: the record was already authenticated, and a newer app may
+// have sent it.
 export function decode(bytes) {
     switch (bytes[0]) {
         case MessageType.TEXT: {
@@ -114,9 +123,12 @@ export function decode(bytes) {
             return { type: MessageType.DELETE, id };
         }
         case MessageType.SETTINGS: {
-            const { disappearAfter, version } = json(bytes);
+            const { disappearAfter, version, features } = json(bytes);
             check(DISAPPEAR_OPTIONS.includes(disappearAfter) && Number.isSafeInteger(version) && version >= 0 && version <= MAX_VERSION);
-            return { type: MessageType.SETTINGS, disappearAfter, version };
+            check(features === undefined || (Array.isArray(features) && features.length <= 32 && features.every((name) => isText(name, 1, 32))));
+            const decoded = { type: MessageType.SETTINGS, disappearAfter, version };
+            if (features) decoded.features = FEATURES.filter((name) => features.includes(name));
+            return decoded;
         }
         case MessageType.CALL: {
             const { action, video } = json(bytes);
@@ -129,8 +141,23 @@ export function decode(bytes) {
             check((description.type === 'offer' || description.type === 'answer') && isText(description.sdp, 1, MAX_SDP));
             return { type: MessageType.RTC, description: { type: description.type, sdp: description.sdp } };
         }
+        case MessageType.EDIT: {
+            const { id, text } = json(bytes);
+            check(isId(id) && isText(text, 1, MAX_TEXT_LENGTH));
+            return { type: MessageType.EDIT, id, text };
+        }
+        case MessageType.PREFS: {
+            const { readReceipts } = json(bytes);
+            check(typeof readReceipts === 'boolean');
+            return { type: MessageType.PREFS, readReceipts };
+        }
+        case MessageType.SEEN: {
+            const { id } = json(bytes);
+            check(isId(id));
+            return { type: MessageType.SEEN, id };
+        }
         default:
-            throw new ProtocolError('Unknown message type');
+            return null;
     }
 }
 

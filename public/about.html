@@ -51,7 +51,7 @@
                     <div class="card">
                         <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM9 11h6v2H9z"/></svg></span>
                         <h3>Straight to the other person</h3>
-                        <p>Messages, files, voice notes and calls travel directly between the two of you. Our server only introduces you, then steps out of the way.</p>
+                        <p>Messages, files, voice notes, calls and screen sharing travel directly between the two of you. Our server only introduces you, then steps out of the way.</p>
                     </div>
                     <div class="card">
                         <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6zm3 11a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg></span>
@@ -108,7 +108,7 @@
                         <tr><th scope="row">Encryption</th><td>AES-256-GCM, with a separate key for each direction. A message counter is the nonce, so a replayed, dropped or reordered message fails to decrypt and the chat closes.</td></tr>
                         <tr><th scope="row">Proof of matching keys</th><td>Each side's first encrypted message carries a hash of everything above. If anything differs, the chat closes before a single message is shown.</td></tr>
                         <tr><th scope="row">Verification code</th><td>Six digits derived from the same keys and context. Matching codes prove the two of you are connected to each other directly.</td></tr>
-                        <tr><th scope="row">Calls</th><td>Audio and video use WebRTC's DTLS-SRTP encryption. Because the certificate fingerprints feed into the code, the code check covers calls too. Call setup travels over the encrypted chat, never through the server.</td></tr>
+                        <tr><th scope="row">Calls</th><td>Audio, video and screen sharing use WebRTC's DTLS-SRTP encryption. Because the certificate fingerprints feed into the code, the code check covers calls too. Call setup travels over the encrypted chat, never through the server.</td></tr>
                         <tr><th scope="row">Files and photos</th><td>Sent in encrypted chunks, up to 100 MB per file. Photos are redrawn before sending, which removes location and camera details, unless you choose to send the original.</td></tr>
                         <tr><th scope="row">Invite links</th><td>A link works for one person only. An unused link expires after 30 minutes.</td></tr>
                     </table>
@@ -157,7 +157,7 @@
                     <div class="card">
                         <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.48 10.36 4.5v7.06H3V5.48zm0 13.04 7.36 1V12.5H3v6.02zM11.25 4.37 21 3v8.56h-9.75V4.37zm0 15.26L21 21v-8.5h-9.75v7.13z"/></svg></span>
                         <h3>Even tighter in the app</h3>
-                        <p>The Windows app carries its own copy of the code instead of loading it from the server. It can also hide its window from screenshots and screen sharing, and blur the chat when you look away.</p>
+                        <p>The Windows app carries its own copy of the code instead of loading it from the server, and its <a href="https://github.com/ecdh-chat/ecdhchat-app" rel="noopener">source is public</a>, so you can build it yourself. It can also hide its window from screenshots and screen sharing, and blur the chat when you look away.</p>
                     </div>
                 </div>
             </section>

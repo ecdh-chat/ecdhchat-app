@@ -476,6 +476,35 @@ button, input, textarea {
     overflow-wrap: anywhere;
 }
 
+/* Formatting inside messages (format.js). */
+.bubble code {
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: rgba(127, 127, 127, 0.18);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.92em;
+}
+
+.bubble pre {
+    margin: 4px 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(127, 127, 127, 0.16);
+    overflow-x: auto;
+    white-space: pre;
+}
+
+.bubble pre code {
+    padding: 0;
+    background: none;
+}
+
+.bubble .edited {
+    margin-left: 6px;
+    font-size: 11px;
+    opacity: 0.6;
+}
+
 .msg-row.me .bubble {
     border-bottom-right-radius: 4px;
     background: var(--bubble-me);
@@ -504,6 +533,30 @@ button, input, textarea {
 
 .msg-row:has(+ .msg-row.continues) > .msg-meta {
     display: none;
+}
+
+/* "New messages" line above what arrived while you were away. */
+.new-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0;
+    color: var(--danger);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.new-divider::before,
+.new-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--danger);
+    opacity: 0.4;
+}
+
+.ticks.seen {
+    color: var(--focus);
 }
 
 .ticks {
@@ -1240,6 +1293,96 @@ dialog .fine-print {
     color: var(--danger);
 }
 
+/* Emoji picker (emoji.js), opened from the composer. */
+.emoji-picker {
+    position: fixed;
+    inset: auto;
+    width: min(340px, calc(100vw - 16px));
+    margin: 0;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.emoji-tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.emoji-tab,
+.emoji-choice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.emoji-tab {
+    flex: 1;
+    height: 34px;
+    opacity: 0.55;
+}
+
+.emoji-tab[aria-selected="true"] {
+    background: var(--bg);
+    opacity: 1;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.emoji-choice {
+    aspect-ratio: 1;
+    font-size: 22px;
+}
+
+.emoji-tab:hover,
+.emoji-choice:hover,
+.emoji-choice:focus-visible {
+    background: var(--bg);
+}
+
+.emoji-empty {
+    grid-column: 1 / -1;
+    margin: 16px 0;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.select-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.select-row select {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--text);
+    font: inherit;
+}
+
 /* Composer extras */
 
 .reply-bar {
@@ -1490,6 +1633,34 @@ dialog {
 
 .call-button[aria-pressed="true"] .icon-off {
     display: block;
+}
+
+/* Screen sharing. The person sharing sees a note instead of their own screen, which would
+   otherwise show itself endlessly; the other person sees it full size, even in a voice call. */
+.sharing-note {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    transform: translateX(-50%);
+}
+
+.call-screen.sharing .local-video {
+    display: none;
+}
+
+.call-screen.remote-sharing .remote-video {
+    display: block;
+    background: #000000;
+}
+
+.call-screen.voice.remote-sharing .call-voice {
+    display: none;
 }
 
 /* Phones */

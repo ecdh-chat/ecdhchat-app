@@ -1,6 +1,8 @@
 import qrcode from '../vendor/qrcode.mjs';
 import * as alerts from './alerts.js';
 import { MAX_FILE_SIZE } from './config.js';
+import { EMOJI_CATEGORIES } from './emoji.js';
+import { parse } from './format.js';
 import { REACTIONS } from './messages.js';
 import { appInvoke, inBackground, isApp, onForeground, serverOrigin } from './platform.js';
 
@@ -33,6 +35,15 @@ const els = {
     replyLabel: $('replyLabel'),
     replySnippet: $('replySnippet'),
     replyCancel: $('replyCancel'),
+    editBar: $('editBar'),
+    editCancel: $('editCancel'),
+    emojiButton: $('emojiButton'),
+    emojiPicker: $('emojiPicker'),
+    emojiTabs: $('emojiTabs'),
+    emojiGrid: $('emojiGrid'),
+    toneSelect: $('toneSelect'),
+    readReceiptsToggle: $('readReceiptsToggle'),
+    menuEdit: $('menuEdit'),
     recordingBar: $('recordingBar'),
     recordingTime: $('recordingTime'),
     recordCancel: $('recordCancel'),
@@ -100,7 +111,9 @@ const ENDED = {
     unsupported: ['This browser isn’t supported', 'ecdh.chat needs a current browser with WebRTC and Web Crypto, opened over HTTPS.'],
 };
 const WARNINGS = new Set(['mismatch', 'peer-mismatch', 'handshake-failed', 'tampered']);
-const URL_PATTERN = /\bhttps?:\/\/[^\s<>"']+/gi;
+// Only messages younger than this offer Edit (main.js enforces it too).
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
+const RECENT_EMOJI = 16;
 const MAX_INPUT_HEIGHT = 160;
 // A scroll this soon after wheel, touch, key or pointer input counts as the person scrolling.
 const USER_SCROLL_MS = 600;
@@ -123,6 +136,10 @@ let relayAvailable = false;
 let dragDepth = 0;
 let unread = 0;
 let menuTarget = null;
+let features = { edit: false };
+let editingMode = false;
+let divider = null;
+let dividerSessionOpen = false;
 // Whether the view follows new content. It stops when you scroll up and resumes at the bottom.
 let pinned = true;
 let userScrolledAt = -Infinity;
@@ -142,8 +159,16 @@ export function init(callbacks) {
         if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
             event.preventDefault();
             submit();
+        } else if (event.key === 'Escape' && editingMode) {
+            event.preventDefault();
+            handlers.onCancelEdit();
+        } else if (event.key === 'ArrowUp' && !editingMode && !els.messageInput.value && staged.length === 0) {
+            event.preventDefault();
+            handlers.onEditLast();
         }
     });
+    els.editCancel.addEventListener('click', () => handlers.onCancelEdit());
+    initEmojiPicker();
     els.messageInput.addEventListener('input', () => {
         resizeInput();
         handlers.onTyping(els.messageInput.value.trim().length > 0);
@@ -261,6 +286,9 @@ export function init(callbacks) {
         unread = 0;
         document.title = 'ecdh.chat';
         appInvoke('set_unread', { count: 0 });
+        // The divider stays where it is, but the next time away starts a new one.
+        dividerSessionOpen = false;
+        handlers.onForeground();
     });
 
     // The site pages live on the server. The app opens them in the browser, and doesn't offer
@@ -345,14 +373,86 @@ export function setComposerEnabled(enabled) {
     els.sendButton.disabled = !enabled;
     els.attachButton.disabled = !enabled;
     els.micButton.disabled = !enabled;
+    els.emojiButton.disabled = !enabled;
     els.disappearGroup.disabled = !enabled;
+}
+
+// Which optional features the other person's app supports.
+export function setFeatures(next) {
+    features = next;
+}
+
+export function startEdit(text) {
+    editingMode = true;
+    clearReply();
+    els.editBar.hidden = false;
+    els.attachButton.disabled = true;
+    els.micButton.disabled = true;
+    els.messageInput.value = text;
+    resizeInput();
+    els.messageInput.focus();
+    els.messageInput.setSelectionRange(text.length, text.length);
+}
+
+export function clearEdit() {
+    if (!editingMode) return;
+    editingMode = false;
+    els.editBar.hidden = true;
+    els.attachButton.disabled = !composerEnabled;
+    els.micButton.disabled = !composerEnabled;
+    els.messageInput.value = '';
+    resizeInput();
+}
+
+// Replaces the text of a message, keeping any quote it replies to, and labels it as edited.
+export function editMessage(id, text) {
+    const entry = rows.get(id);
+    const bubble = entry?.line.querySelector('.bubble');
+    if (!bubble || entry.deleted) return;
+    const quote = bubble.querySelector('.quote');
+    bubble.replaceChildren(...(quote ? [quote] : []), ...formatted(text), el('span', { className: 'edited', textContent: 'edited' }));
+    entry.text = text;
+}
+
+// "Seen" covers the given message and every earlier one of yours.
+export function markSeen(id) {
+    for (const [rowId, entry] of rows) {
+        if (entry.mine && entry.tick && !entry.deleted) {
+            entry.tick.textContent = '✓✓';
+            entry.tick.classList.add('seen');
+            entry.tick.setAttribute('aria-label', 'Seen');
+        }
+        if (rowId === id) break;
+    }
+}
+
+export function clearSeen() {
+    for (const entry of rows.values()) {
+        if (!entry.tick?.classList.contains('seen')) continue;
+        entry.tick.classList.remove('seen');
+        entry.tick.setAttribute('aria-label', 'Delivered');
+    }
+}
+
+// Whether the newest message is actually in front of the person.
+export function newestInView() {
+    return pinned && !inBackground();
+}
+
+export function readReceiptsPreference() {
+    try {
+        return localStorage.getItem('readReceipts') === '1';
+    } catch {
+        return false;
+    }
 }
 
 export function addMessage({ id, from, text, quote }) {
     const bubble = el('div', { className: 'bubble' });
     if (quote) bubble.append(quoteButton(quote));
-    bubble.append(...linkify(text));
-    appendRow({ id, from, content: bubble, text });
+    bubble.append(...formatted(text));
+    const entry = appendRow({ id, from, content: bubble, text });
+    entry.editable = true;
 }
 
 export function addFile({ id, from, name, size, kind, caption, url = null }) {
@@ -363,7 +463,7 @@ export function addFile({ id, from, name, size, kind, caption, url = null }) {
     cancel.addEventListener('click', () => handlers.onCancelFile(id));
 
     const card = el('div', { className: 'file-card' }, [body, el('div', { className: 'file-progress' }, [progress, status, cancel])]);
-    if (caption) card.append(el('div', { className: 'attachment-text' }, linkify(caption)));
+    if (caption) card.append(el('div', { className: 'attachment-text' }, formatted(caption)));
 
     files.set(id, { card, body, progress, status, cancel, mine: from === 'me' });
     const entry = appendRow({ id, from, content: card, text: caption });
@@ -502,6 +602,7 @@ export function addSystem(content) {
 
 export function noteIncoming() {
     if (!inBackground()) return;
+    markNewMessages();
     unread++;
     document.title = `(${unread}) ecdh.chat`;
     appInvoke('set_unread', { count: unread });
@@ -555,12 +656,33 @@ function submit() {
     const text = els.messageInput.value.trim();
     if (!text && staged.length === 0) return;
 
+    if (editingMode) {
+        handlers.onSend({ text, files: [], original: false });
+        return;
+    }
     const outgoing = { text, files: staged.map((item) => item.file), original: els.originalToggle.checked };
     clearStaged();
     clearReply();
+    removeDivider();
     els.messageInput.value = '';
     resizeInput();
     handlers.onSend(outgoing);
+}
+
+// A "New messages" line above the first message that arrived while you were away. It stays until
+// you send something, and moves the next time you're away.
+function markNewMessages() {
+    if (dividerSessionOpen) return;
+    dividerSessionOpen = true;
+    const newest = els.typing.previousElementSibling;
+    if (!newest?.classList.contains('msg-row')) return;
+    divider ??= el('div', { className: 'new-divider', role: 'separator' }, [el('span', { textContent: 'New messages' })]);
+    els.messages.insertBefore(divider, newest);
+}
+
+function removeDivider() {
+    divider?.remove();
+    dividerSessionOpen = false;
 }
 
 function stage(fileList) {
@@ -607,6 +729,8 @@ function clearStaged() {
 
 function clearConversation() {
     clearStaged();
+    clearEdit();
+    removeDivider();
     showTyping(false);
     sizeWatcher.disconnect();
     els.messages.replaceChildren(els.typing, els.jumpButton);
@@ -670,6 +794,7 @@ function initMessageMenu() {
     }));
     els.menuReply.addEventListener('click', () => menuAction(() => handlers.onReply(menuTarget)));
     els.menuDelete.addEventListener('click', () => menuAction(() => handlers.onDelete(menuTarget)));
+    els.menuEdit.addEventListener('click', () => menuAction(() => handlers.onStartEdit(menuTarget)));
     els.menuCopy.addEventListener('click', () => menuAction(() => {
         const text = rows.get(menuTarget)?.text;
         if (text) navigator.clipboard.writeText(text).catch(() => {});
@@ -683,6 +808,7 @@ function openMenu(id, anchor) {
     menuTarget = id;
     els.menuCopy.hidden = !entry.text;
     els.menuDelete.hidden = !entry.mine;
+    els.menuEdit.hidden = !(features.edit && entry.mine && entry.editable && Date.now() - Number(entry.row.dataset.at) < EDIT_WINDOW_MS);
     if (els.messageMenu.matches(':popover-open')) els.messageMenu.hidePopover();
     els.messageMenu.showPopover();
 
@@ -708,6 +834,20 @@ function initSettings() {
     els.notifyToggle.checked = notify;
     els.notifyNote.hidden = !alerts.notificationsBlocked();
     els.soundToggle.addEventListener('change', () => alerts.setSound(els.soundToggle.checked));
+    els.toneSelect.value = alerts.tone();
+    els.toneSelect.addEventListener('change', () => {
+        alerts.setTone(els.toneSelect.value);
+        alerts.preview();
+    });
+    els.readReceiptsToggle.checked = readReceiptsPreference();
+    els.readReceiptsToggle.addEventListener('change', () => {
+        try {
+            localStorage.setItem('readReceipts', els.readReceiptsToggle.checked ? '1' : '0');
+        } catch {
+            // Not saved; the choice still applies to this chat.
+        }
+        handlers.onReadReceipts(els.readReceiptsToggle.checked);
+    });
     els.notifyToggle.addEventListener('change', async () => {
         els.notifyToggle.checked = await alerts.setNotify(els.notifyToggle.checked);
         els.notifyNote.hidden = !alerts.notificationsBlocked();
@@ -730,25 +870,84 @@ function quoteButton({ id, label, snippet }) {
     return button;
 }
 
-// Turns http(s) addresses into links. Nothing is fetched or previewed.
-function linkify(text) {
-    const nodes = [];
-    let last = 0;
-    for (const match of text.matchAll(URL_PATTERN)) {
-        const address = match[0].replace(/[.,;:!?)\]}'"]+$/, '');
-        let href = null;
-        try {
-            const url = new URL(address);
-            if (url.protocol === 'http:' || url.protocol === 'https:') href = url.href;
-        } catch {
-            // Not a valid address; it stays plain text.
+// Builds a message's formatting and links (see format.js) as DOM nodes. Links are never fetched
+// or previewed.
+function formatted(text) {
+    return parse(text).map(function build(segment) {
+        switch (segment.type) {
+            case 'bold': return el('strong', {}, segment.children.map(build));
+            case 'italic': return el('em', {}, segment.children.map(build));
+            case 'strike': return el('s', {}, segment.children.map(build));
+            case 'code': return el('code', { textContent: segment.text });
+            case 'pre': return el('pre', {}, [el('code', { textContent: segment.text })]);
+            case 'link': return el('a', { href: segment.href, target: '_blank', rel: 'noopener noreferrer', textContent: segment.text });
+            default: return segment.text;
         }
-        if (match.index > last) nodes.push(text.slice(last, match.index));
-        nodes.push(href ? el('a', { href, target: '_blank', rel: 'noopener noreferrer', textContent: address }) : address);
-        last = match.index + address.length;
+    });
+}
+
+// The emoji picker: categories, a "Recent" row kept on this device, and insertion at the cursor.
+function initEmojiPicker() {
+    const categories = [{ name: 'Recent', icon: '🕘', emoji: [] }, ...EMOJI_CATEGORIES];
+    let current = recentEmoji().length > 0 ? 0 : 1;
+
+    const show = (index) => {
+        current = index;
+        categories[0].emoji = recentEmoji();
+        for (const [i, tab] of [...els.emojiTabs.children].entries()) tab.setAttribute('aria-selected', String(i === index));
+        els.emojiGrid.replaceChildren(...categories[index].emoji.map((emoji) => {
+            const button = el('button', { type: 'button', className: 'emoji-choice', textContent: emoji });
+            button.setAttribute('aria-label', emoji);
+            button.addEventListener('click', () => insertEmoji(emoji));
+            return button;
+        }));
+        if (index === 0 && categories[0].emoji.length === 0) els.emojiGrid.append(el('p', { className: 'emoji-empty', textContent: 'Emoji you use show up here.' }));
+    };
+
+    els.emojiTabs.replaceChildren(...categories.map((category, index) => {
+        const tab = el('button', { type: 'button', className: 'emoji-tab', textContent: category.icon, title: category.name });
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-label', category.name);
+        tab.addEventListener('click', () => show(index));
+        return tab;
+    }));
+
+    els.emojiButton.addEventListener('click', () => {
+        if (els.emojiPicker.matches(':popover-open')) return els.emojiPicker.hidePopover();
+        show(current);
+        els.emojiPicker.showPopover();
+        const button = els.emojiButton.getBoundingClientRect();
+        const picker = els.emojiPicker.getBoundingClientRect();
+        els.emojiPicker.style.left = `${Math.max(8, Math.min(window.innerWidth - picker.width - 8, button.right - picker.width))}px`;
+        els.emojiPicker.style.top = `${Math.max(8, button.top - picker.height - 8)}px`;
+        els.emojiGrid.querySelector('button')?.focus();
+    });
+
+    function insertEmoji(emoji) {
+        const input = els.messageInput;
+        input.focus();
+        input.setRangeText(emoji, input.selectionStart, input.selectionEnd, 'end');
+        input.dispatchEvent(new Event('input'));
+        saveRecentEmoji(emoji);
     }
-    if (last < text.length) nodes.push(text.slice(last));
-    return nodes;
+}
+
+function recentEmoji() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('recentEmoji') || '[]');
+        const known = new Set(EMOJI_CATEGORIES.flatMap((category) => category.emoji));
+        return Array.isArray(saved) ? saved.filter((emoji) => known.has(emoji)).slice(0, RECENT_EMOJI) : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveRecentEmoji(emoji) {
+    try {
+        localStorage.setItem('recentEmoji', JSON.stringify([emoji, ...recentEmoji().filter((other) => other !== emoji)].slice(0, RECENT_EMOJI)));
+    } catch {
+        // Not saved; the picker just won't remember it.
+    }
 }
 
 function setTick(id, text, label) {

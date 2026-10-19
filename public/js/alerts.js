@@ -5,6 +5,14 @@ import { inBackground } from './platform.js';
 
 const SOUND = 'alertSound';
 const NOTIFY = 'alertNotify';
+const TONE = 'alertTone';
+// Each tone is a few notes: [start in seconds, frequency in Hz, length in seconds, waveform].
+const TONES = {
+    chime: [[0, 880, 0.25, 'sine'], [0.12, 1320, 0.25, 'sine']],
+    soft: [[0, 523, 0.35, 'sine'], [0.18, 659, 0.4, 'sine']],
+    pop: [[0, 1200, 0.08, 'triangle'], [0.07, 1600, 0.08, 'triangle']],
+    bell: [[0, 988, 0.6, 'sine'], [0, 1976, 0.35, 'sine']],
+};
 let audioContext = null;
 
 export function preferences() {
@@ -13,6 +21,20 @@ export function preferences() {
 
 export function setSound(enabled) {
     write(SOUND, enabled ? '1' : '0');
+}
+
+export function tone() {
+    const saved = read(TONE, 'chime');
+    return Object.hasOwn(TONES, saved) ? saved : 'chime';
+}
+
+export function setTone(name) {
+    if (Object.hasOwn(TONES, name)) write(TONE, name);
+}
+
+// Plays the chosen tone once, so it can be heard while choosing.
+export function preview() {
+    chime(1);
 }
 
 // Asks for permission when turned on; resolves to whether notifications are actually on.
@@ -54,23 +76,24 @@ function alert(body, chimes) {
     }
 }
 
-// Two short soft tones, generated on the spot, so no audio file is needed.
+// The chosen tone, generated on the spot so no audio file is needed. Calls repeat it.
 function chime(times) {
     try {
         audioContext ??= new AudioContext();
         const start = audioContext.currentTime;
         for (let i = 0; i < times; i++) {
-            for (const [offset, frequency] of [[0, 880], [0.12, 1320]]) {
+            for (const [offset, frequency, length, type] of TONES[tone()]) {
                 const at = start + i * 0.6 + offset;
                 const oscillator = audioContext.createOscillator();
                 const gain = audioContext.createGain();
+                oscillator.type = type;
                 oscillator.frequency.value = frequency;
                 gain.gain.setValueAtTime(0.0001, at);
                 gain.gain.exponentialRampToValueAtTime(0.15, at + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.25);
+                gain.gain.exponentialRampToValueAtTime(0.0001, at + length);
                 oscillator.connect(gain).connect(audioContext.destination);
                 oscillator.start(at);
-                oscillator.stop(at + 0.3);
+                oscillator.stop(at + length + 0.05);
             }
         }
     } catch {

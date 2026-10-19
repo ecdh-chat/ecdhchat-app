@@ -89,6 +89,15 @@ export class Peer {
         }
     }
 
+    // Swaps only the video being sent (camera, a shared screen, or nothing). A first video track
+    // in a voice call needs a renegotiation, which goes over the encrypted channel.
+    setVideoTrack(track, stream) {
+        const sender = this.senders.get('video');
+        if (sender) return sender.replaceTrack(track);
+        if (track) this.senders.set('video', this.pc.addTrack(track, stream));
+        return Promise.resolve();
+    }
+
     fingerprints() {
         const local = fingerprint(this.pc.localDescription.sdp);
         const remote = fingerprint(this.pc.remoteDescription.sdp);
