@@ -105,6 +105,10 @@ const MAX_INPUT_HEIGHT = 160;
 // A scroll this soon after wheel, touch, key or pointer input counts as the person scrolling.
 const USER_SCROLL_MS = 600;
 const HEX = '0123456789abcdef';
+const CIPHER_PAIRS = 3;
+const CIPHER_STEP_MS = 85;
+// Messages from the same person this close together share one timestamp.
+const GROUP_MS = 5 * 60 * 1000;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
 const urls = new Set();
@@ -423,7 +427,9 @@ export function removeMessage(id) {
     files.delete(id);
     rows.delete(id);
     sizeWatcher.unobserve(entry.row);
+    const { previousElementSibling: previous, nextElementSibling: next } = entry.row;
     entry.row.remove();
+    if (next?.classList.contains('msg-row')) next.classList.toggle('continues', continuesGroup(previous, next));
 }
 
 export function setReactions(id, reactions) {
@@ -456,7 +462,7 @@ export function showTyping(typing) {
     cipherTimer = null;
     if (!typing) return;
     // Looks like ciphertext being written. It's decoration only: the glyphs mean nothing.
-    els.typingCipher.replaceChildren(...Array.from({ length: 4 }, () => el('span', { textContent: hexPair() })));
+    els.typingCipher.replaceChildren(...Array.from({ length: CIPHER_PAIRS }, () => el('span', { textContent: hexPair() })));
     if (reducedMotion.matches) return;
     cipherTimer = setInterval(() => {
         const pairs = els.typingCipher.children;
@@ -465,7 +471,7 @@ export function showTyping(typing) {
         pair.classList.remove('fresh');
         void pair.offsetWidth;
         pair.classList.add('fresh');
-    }, 120);
+    }, CIPHER_STEP_MS);
 }
 
 export function setVerification({ sas, me, peer }) {
@@ -618,17 +624,24 @@ function clearConversation() {
 }
 
 // One message on screen: the bubble or file card with its ⋯ menu, reactions, and the time (plus
-// ticks for your own messages).
+// ticks for your own messages). Hovering it shows its exact time, and right-clicking it opens the
+// same menu as the ⋯ button.
 function appendRow({ id, from, content, text = '' }) {
     const mine = from === 'me';
+    const now = new Date();
     const row = el('div', { className: mine ? 'msg-row me' : 'msg-row peer' });
+    row.dataset.at = String(now.getTime());
 
     const actions = el('button', { type: 'button', className: 'msg-actions', textContent: '⋯' });
     actions.setAttribute('aria-label', 'Message options');
     actions.addEventListener('click', () => openMenu(id, actions));
-    const line = el('div', { className: 'msg-line' }, [content, actions]);
+    const line = el('div', { className: 'msg-line', title: now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) }, [content, actions]);
+    line.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        openMenu(id, { x: event.clientX, y: event.clientY });
+    });
     const reactions = el('div', { className: 'reactions' });
-    const meta = el('div', { className: 'msg-meta' }, [el('time', { textContent: formatTime(new Date()) })]);
+    const meta = el('div', { className: 'msg-meta' }, [el('time', { textContent: formatTime(now), dateTime: now.toISOString() })]);
     let tick = null;
     if (mine) {
         tick = el('span', { className: 'ticks' });
@@ -640,6 +653,7 @@ function appendRow({ id, from, content, text = '' }) {
     // Sending something always brings you back to the newest message.
     if (mine) pinned = true;
     else if (!pinned) setMissed(missed + 1);
+    row.classList.toggle('continues', continuesGroup(els.typing.previousElementSibling, row));
     insertRow(row);
 
     const entry = { row, line, reactions, tick, mine, text, deleted: false, urls: [] };
@@ -662,17 +676,21 @@ function initMessageMenu() {
     }));
 }
 
+// Opens beside the ⋯ button, or at the pointer when the message was right-clicked.
 function openMenu(id, anchor) {
     const entry = rows.get(id);
     if (!entry || entry.deleted) return;
     menuTarget = id;
     els.menuCopy.hidden = !entry.text;
     els.menuDelete.hidden = !entry.mine;
+    if (els.messageMenu.matches(':popover-open')) els.messageMenu.hidePopover();
     els.messageMenu.showPopover();
 
-    const button = anchor.getBoundingClientRect();
+    const atPointer = !(anchor instanceof Element);
+    const button = atPointer ? { left: anchor.x, right: anchor.x, top: anchor.y, bottom: anchor.y } : anchor.getBoundingClientRect();
     const menu = els.messageMenu.getBoundingClientRect();
-    const left = Math.min(window.innerWidth - menu.width - 8, Math.max(8, entry.mine ? button.right - menu.width : button.left));
+    const preferred = !atPointer && entry.mine ? button.right - menu.width : button.left;
+    const left = Math.min(window.innerWidth - menu.width - 8, Math.max(8, preferred));
     const below = button.bottom + 4;
     const top = below + menu.height > window.innerHeight - 8 ? button.top - menu.height - 4 : below;
     els.messageMenu.style.left = `${left}px`;
@@ -908,6 +926,13 @@ function savedHideIp() {
     } catch {
         return false;
     }
+}
+
+// Whether a message continues the previous one's group: same person, sent soon after.
+function continuesGroup(previous, row) {
+    if (!previous?.classList.contains('msg-row')) return false;
+    const sameSender = previous.classList.contains('me') === row.classList.contains('me');
+    return sameSender && Number(row.dataset.at) - Number(previous.dataset.at) < GROUP_MS;
 }
 
 function formatTime(date) {

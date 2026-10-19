@@ -46,6 +46,13 @@ export async function initDesktop({ busy, leave, newChat, openSettings }) {
     initPrivacyShield();
     initUpdates(busy, leave);
 
+    // The webview's own menu (Back, Reload, Print…) doesn't belong in an app. Text fields and
+    // selected text keep it for copy and paste; messages open their own menu.
+    document.addEventListener('contextmenu', (event) => {
+        if (event.defaultPrevented || event.target.closest('input, textarea') || String(getSelection())) return;
+        event.preventDefault();
+    });
+
     $('appConfirmButton').addEventListener('click', () => settle(true));
     $('appConfirmDialog').addEventListener('close', () => settle(false));
 

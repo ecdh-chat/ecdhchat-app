@@ -496,6 +496,16 @@ button, input, textarea {
     font-size: 11px;
 }
 
+/* Messages sent close together form a group: only the last one shows the time and ticks. Each
+   message still shows its exact time when hovered (its title). */
+.msg-row.continues {
+    margin-top: -6px;
+}
+
+.msg-row:has(+ .msg-row.continues) > .msg-meta {
+    display: none;
+}
+
 .ticks {
     letter-spacing: -0.25em;
     padding-right: 0.25em;
