@@ -552,6 +552,12 @@ button, input, textarea {
     display: none;
 }
 
+/* While the other person is typing, the newest message gives up its time so the indicator sits
+   right below it. The time comes back when they stop. */
+.msg-row:has(+ .typing-indicator:not([hidden])) > .msg-meta {
+    display: none;
+}
+
 /* "New messages" line above what arrived while you were away. */
 .new-divider {
     display: flex;
@@ -1710,10 +1716,6 @@ dialog {
 
     .chat-messages {
         padding: 14px calc(14px + env(safe-area-inset-right)) 14px calc(14px + env(safe-area-inset-left));
-    }
-
-    .typing-indicator {
-        padding: 0 calc(14px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left));
     }
 
     .chat-footer {

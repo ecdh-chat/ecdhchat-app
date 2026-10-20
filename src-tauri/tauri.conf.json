@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "ecdh.chat",
   "mainBinaryName": "ecdh-chat",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "identifier": "chat.ecdh.desktop",
   "build": {
     "frontendDist": "../public"
