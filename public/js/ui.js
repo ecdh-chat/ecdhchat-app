@@ -2,7 +2,7 @@ import qrcode from '../vendor/qrcode.mjs';
 import * as alerts from './alerts.js';
 import { MAX_FILE_SIZE } from './config.js';
 import { EMOJI_CATEGORIES } from './emoji.js';
-import { parse } from './format.js';
+import { emojiOnly, parse } from './format.js';
 import { REACTIONS } from './messages.js';
 import { appInvoke, inBackground, isApp, onForeground, serverOrigin } from './platform.js';
 
@@ -136,6 +136,8 @@ let relayAvailable = false;
 let dragDepth = 0;
 let unread = 0;
 let menuTarget = null;
+// Whether a mouse button or finger is down right now (see the right-click menu in appendRow).
+let pointerHeld = false;
 let features = { edit: false };
 let editingMode = false;
 let divider = null;
@@ -251,6 +253,10 @@ export function init(callbacks) {
         els.messages.addEventListener(type, () => {
             userScrolledAt = performance.now();
         }, { passive: true });
+    }
+    window.addEventListener('pointerdown', () => { pointerHeld = true; }, { capture: true, passive: true });
+    for (const type of ['pointerup', 'pointercancel']) {
+        window.addEventListener(type, () => { pointerHeld = false; }, { capture: true, passive: true });
     }
     els.messages.addEventListener('scroll', () => {
         if (isNearBottom()) pinned = true;
@@ -411,6 +417,7 @@ export function editMessage(id, text) {
     if (!bubble || entry.deleted) return;
     const quote = bubble.querySelector('.quote');
     bubble.replaceChildren(...(quote ? [quote] : []), ...formatted(text), el('span', { className: 'edited', textContent: 'edited' }));
+    markJumbo(bubble, text, Boolean(quote));
     entry.text = text;
 }
 
@@ -451,8 +458,17 @@ export function addMessage({ id, from, text, quote }) {
     const bubble = el('div', { className: 'bubble' });
     if (quote) bubble.append(quoteButton(quote));
     bubble.append(...formatted(text));
+    markJumbo(bubble, text, Boolean(quote));
     const entry = appendRow({ id, from, content: bubble, text });
     entry.editable = true;
+}
+
+// A message of only a few emoji shows them large, without a bubble. Replies keep the bubble so
+// the quote stays readable.
+function markJumbo(bubble, text, hasQuote) {
+    const count = hasQuote ? 0 : emojiOnly(text);
+    bubble.classList.toggle('jumbo', count >= 1 && count <= 3);
+    bubble.classList.toggle('jumbo-many', count >= 4 && count <= 10);
 }
 
 export function addFile({ id, from, name, size, kind, caption, url = null }) {
@@ -762,7 +778,17 @@ function appendRow({ id, from, content, text = '' }) {
     const line = el('div', { className: 'msg-line', title: now.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) }, [content, actions]);
     line.addEventListener('contextmenu', (event) => {
         event.preventDefault();
-        openMenu(id, { x: event.clientX, y: event.clientY });
+        const at = { x: event.clientX, y: event.clientY };
+        if (!pointerHeld) return openMenu(id, at);
+        // On Linux, macOS and phones this fires while the button is still down, and letting go
+        // would close the menu right away. Open it once the button is released instead.
+        const release = () => {
+            window.removeEventListener('pointerup', release);
+            window.removeEventListener('pointercancel', release);
+            setTimeout(() => openMenu(id, at), 0);
+        };
+        window.addEventListener('pointerup', release);
+        window.addEventListener('pointercancel', release);
     });
     const reactions = el('div', { className: 'reactions' });
     const meta = el('div', { className: 'msg-meta' }, [el('time', { textContent: formatTime(now), dateTime: now.toISOString() })]);

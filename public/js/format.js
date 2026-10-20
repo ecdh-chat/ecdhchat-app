@@ -24,6 +24,21 @@ export function plainText(text) {
     return flatten(parse(text));
 }
 
+// One emoji as people see it: a pictograph (with any skin tone or joined parts), a flag, or a keycap.
+const EMOJI = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}{2}|[#*0-9]\uFE0F?\u20E3)/u;
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+// How many emoji the text is made of, or 0 when it has anything else (spaces don't count).
+export function emojiOnly(text) {
+    let count = 0;
+    for (const { segment } of graphemes.segment(text)) {
+        if (SPACE.test(segment)) continue;
+        if (!EMOJI.test(segment)) return 0;
+        count += 1;
+    }
+    return count;
+}
+
 function flatten(segments) {
     return segments.map((segment) => segment.children ? flatten(segment.children) : segment.text).join('');
 }

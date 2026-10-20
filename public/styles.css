@@ -517,6 +517,23 @@ button, input, textarea {
     color: var(--text);
 }
 
+/* Messages of only emoji: large, without a bubble. */
+.msg-row .bubble.jumbo,
+.msg-row .bubble.jumbo-many {
+    padding: 0;
+    background: none;
+    color: var(--text);
+    line-height: 1.15;
+}
+
+.bubble.jumbo {
+    font-size: 40px;
+}
+
+.bubble.jumbo-many {
+    font-size: 28px;
+}
+
 .msg-meta {
     display: flex;
     gap: 6px;
