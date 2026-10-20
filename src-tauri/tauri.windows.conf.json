@@ -1,0 +1,24 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "plugins": {
+    "updater": {
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
+  "bundle": {
+    "targets": ["nsis"],
+    "windows": {
+      "nsis": {
+        "installMode": "both",
+        "startMenuFolder": "ecdh.chat",
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/windows/header.bmp",
+        "sidebarImage": "installer/windows/sidebar.bmp",
+        "installerHooks": "installer/windows/hooks.nsh",
+        "compression": "lzma"
+      }
+    }
+  }
+}

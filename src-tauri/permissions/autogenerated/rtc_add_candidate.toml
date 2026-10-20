@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-rtc-add-candidate"
+description = "Enables the rtc_add_candidate command without any pre-configured scope."
+commands.allow = ["rtc_add_candidate"]
+
+[[permission]]
+identifier = "deny-rtc-add-candidate"
+description = "Denies the rtc_add_candidate command without any pre-configured scope."
+commands.deny = ["rtc_add_candidate"]

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="referrer" content="no-referrer">
-    <meta name="description" content="Download the ecdh.chat desktop app for Windows: private, peer-to-peer chat, encrypted end to end.">
-    <title>Download ecdh.chat for Windows</title>
+    <meta name="description" content="Download the ecdh.chat desktop app for Windows and Linux: private, peer-to-peer chat, encrypted end to end.">
+    <title>Download ecdh.chat for Windows and Linux</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -36,29 +36,61 @@
         <div class="wrap">
             <div class="hero">
                 <p class="eyebrow">Download</p>
-                <h1>ecdh.chat for Windows</h1>
-                <p class="lede">The same private chat as a small, fast desktop app. It carries its own code, keeps your chat open in the tray, and can hide it from screenshots.</p>
+                <h1>ecdh.chat for your computer</h1>
+                <p class="lede">The same private chat as a small, fast desktop app for Windows and Linux. It carries its own code and keeps your chat open in the tray.</p>
 
-                <div class="download-card">
-                    <img src="/icon-512.png" alt="" width="88" height="88">
-                    <div>
-                        <h2>Windows 10 and 11</h2>
-                        <p class="download-meta">64-bit · under 2 MB · free</p>
-                        <a class="button primary large" href="/downloads/ecdh.chat-setup.exe" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Download for Windows</a>
-                        <p id="installerDetails" class="checksum" hidden>
-                            <span id="installerVersion"></span><span aria-hidden="true">·</span><span id="installerSize"></span><span aria-hidden="true">·</span><span>SHA-256</span><code id="installerHash" class="mono"></code>
-                        </p>
+                <!-- The visitor's own system comes first (js/site.js). -->
+                <div id="downloads" class="downloads">
+                    <div class="download-card" data-os="windows">
+                        <img src="/icon-512.png" alt="" width="88" height="88">
+                        <div>
+                            <h2>Windows 10 and 11</h2>
+                            <p class="download-meta">64-bit · under 2 MB · free</p>
+                            <a class="button primary large" href="/downloads/windows/ecdh.chat-setup.exe" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Download for Windows</a>
+                            <p class="checksum" data-installer="windows" hidden>
+                                <span data-version></span><span aria-hidden="true">·</span><span data-size></span><span aria-hidden="true">·</span><span>SHA-256</span><code class="mono" data-hash></code>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="download-card" data-os="linux">
+                        <img src="/icon-512.png" alt="" width="88" height="88">
+                        <div>
+                            <h2>Linux</h2>
+                            <p class="download-meta">64-bit · Ubuntu 22.04, Debian 12 and newer, or any distribution with the AppImage · free</p>
+                            <div class="actions">
+                                <a class="button primary large" href="/downloads/linux/ecdh.chat_amd64.deb" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>.deb for Ubuntu and Debian</a>
+                                <a class="button secondary large" href="/downloads/linux/ecdh.chat-x86_64.AppImage" download>AppImage</a>
+                            </div>
+                            <p class="checksum" data-installer="deb" hidden>
+                                <span>.deb</span><span aria-hidden="true">·</span><span data-version></span><span aria-hidden="true">·</span><span data-size></span><span aria-hidden="true">·</span><span>SHA-256</span><code class="mono" data-hash></code>
+                            </p>
+                            <p class="checksum" data-installer="appimage" hidden>
+                                <span>AppImage</span><span aria-hidden="true">·</span><span data-version></span><span aria-hidden="true">·</span><span data-size></span><span aria-hidden="true">·</span><span>SHA-256</span><code class="mono" data-hash></code>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <section aria-labelledby="install">
                 <h2 id="install">Installing</h2>
+                <h3>Windows</h3>
                 <p class="section-intro">Run the installer and choose whether to install just for you or for everyone on the computer, and where it goes. Uninstall any time from Windows Settings.</p>
                 <div class="note" role="note">
                     <div>
                         <p><strong>Windows may show a warning.</strong> The app isn't code-signed yet, so SmartScreen may say it doesn't recognise it. Choose <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
                         <p>To make sure you have the real file, compare its fingerprint with the SHA-256 shown above. In PowerShell, run <code>Get-FileHash $HOME\Downloads\ecdh.chat-setup.exe</code></p>
+                    </div>
+                </div>
+
+                <h3>Linux</h3>
+                <p class="section-intro">On Ubuntu, Debian and Mint, pick the .deb. It uses your system's web engine, so your regular security updates keep that part up to date. Open it with your software installer, or run <code>sudo apt install ./ecdh.chat_amd64.deb</code>. When there's an update, the app asks for your password to install it.</p>
+                <p class="section-intro">The AppImage brings everything it needs, runs on almost any distribution and updates itself. Make it executable, then start it: <code>chmod +x ecdh.chat-x86_64.AppImage</code> and <code>./ecdh.chat-x86_64.AppImage</code>. Ubuntu 22.04 and newer need FUSE 2 for AppImages: <code>sudo apt install libfuse2t64</code>, or <code>libfuse2</code> on 22.04.</p>
+                <div class="note" role="note">
+                    <div>
+                        <p><strong>Calls aren't in the Linux app yet.</strong> Chats, files and voice messages work as everywhere else; for calls, open ecdh.chat in a browser. Linux also can't hide a window from screenshots, so that setting is Windows-only.</p>
+                        <p>To make sure you have the real file, compare its fingerprint with the SHA-256 shown above, for example with <code>sha256sum ecdh.chat_amd64.deb</code></p>
                     </div>
                 </div>
             </section>
@@ -81,18 +113,18 @@
                     </div>
                     <div class="card">
                         <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></span>
-                        <h3>Screenshot blocking and privacy blur</h3>
-                        <p>Hide the window from screenshots, recordings and screen sharing, and blur the chat whenever you switch to something else.</p>
+                        <h3>Privacy blur and screenshot blocking</h3>
+                        <p>Blur the chat whenever you switch to something else. On Windows it can also hide the window from screenshots, recordings and screen sharing.</p>
                     </div>
                     <div class="card">
                         <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 12h-4a3 3 0 0 1-6 0H5V5h14v10z"/></svg></span>
                         <h3>Stays with you</h3>
-                        <p>Closing the window keeps your chat open in the tray, with quiet alerts that never show what was said. It can start with Windows too.</p>
+                        <p>Closing the window keeps your chat open in the tray, with quiet alerts that never show what was said. It can start when you log in, too.</p>
                     </div>
                     <div class="card">
                         <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 4.42-3.58 8-8 8s-8-3.58-8-8c0-4.08 3.05-7.44 7-7.93V2.05C5.94 2.55 2 6.81 2 12c0 5.52 4.47 10 9.99 10S22 17.52 22 12c0-5.19-3.94-9.45-9-9.95zM12 7l-5 5h4v5h2v-5h4l-5-5z"/></svg></span>
                         <h3>Tiny and light</h3>
-                        <p>Under 2 MB to download, because it uses the web engine already built into Windows instead of bundling a whole browser.</p>
+                        <p>Under 2 MB on Windows and about 4 MB as a .deb, because it uses the web engine already on your system instead of bundling a whole browser.</p>
                     </div>
                 </div>
             </section>
@@ -102,9 +134,9 @@
                 <p class="section-intro">Apps for more platforms are on the way. Until then, ecdh.chat works in any up-to-date browser, on any device.</p>
                 <ul class="platforms">
                     <li><strong>Windows</strong> · available</li>
+                    <li><strong>Linux</strong> · available</li>
                     <li><strong>Web</strong> · <a href="/">open now</a></li>
                     <li><strong>macOS</strong> · coming later</li>
-                    <li><strong>Linux</strong> · coming later</li>
                     <li><strong>Android</strong> · coming later</li>
                     <li><strong>iOS</strong> · coming later</li>
                 </ul>

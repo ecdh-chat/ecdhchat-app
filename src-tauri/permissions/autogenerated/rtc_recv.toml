@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-rtc-recv"
+description = "Enables the rtc_recv command without any pre-configured scope."
+commands.allow = ["rtc_recv"]
+
+[[permission]]
+identifier = "deny-rtc-recv"
+description = "Denies the rtc_recv command without any pre-configured scope."
+commands.deny = ["rtc_recv"]

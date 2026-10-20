@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "ecdh.chat",
   "mainBinaryName": "ecdh-chat",
-  "version": "3.2.2",
+  "version": "4.0.0",
   "identifier": "chat.ecdh.desktop",
   "build": {
     "frontendDist": "../public"
@@ -27,16 +27,11 @@
       "endpoints": [
         "https://ecdh.chat/downloads/update.json"
       ],
-      "windows": {
-        "installMode": "passive"
-      }
+      "requireSignedVersion": true
     }
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "nsis"
-    ],
     "shortDescription": "Peer-to-peer end-to-end encrypted chat",
     "icon": [
       "icons/32x32.png",
@@ -50,17 +45,6 @@
     "homepage": "https://ecdh.chat",
     "licenseFile": "../LICENSE",
     "longDescription": "Private peer-to-peer chat, encrypted end to end. Nothing is stored.",
-    "windows": {
-      "nsis": {
-        "installMode": "both",
-        "startMenuFolder": "ecdh.chat",
-        "installerIcon": "icons/icon.ico",
-        "headerImage": "installer/header.bmp",
-        "sidebarImage": "installer/sidebar.bmp",
-        "installerHooks": "installer/hooks.nsh",
-        "compression": "lzma"
-      }
-    },
     "createUpdaterArtifacts": false
   }
 }

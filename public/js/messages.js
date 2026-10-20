@@ -23,6 +23,10 @@ export const MessageType = Object.freeze({
 // What each side can do beyond 3.1. They're announced inside SETTINGS, whose extra fields older
 // apps ignore, and a feature is only used when both sides announce it.
 export const FEATURES = ['edit', 'seen', 'screen'];
+// Announced only by an app that can't take calls (the Linux app, for now), so the other side
+// hides its call buttons. It's an opt-out because older apps announce nothing at all.
+export const NO_CALLS = 'no-calls';
+const KNOWN_FEATURES = [...FEATURES, NO_CALLS];
 
 export const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 export const DISAPPEAR_OPTIONS = [0, 30, 300, 3600];
@@ -127,7 +131,7 @@ export function decode(bytes) {
             check(DISAPPEAR_OPTIONS.includes(disappearAfter) && Number.isSafeInteger(version) && version >= 0 && version <= MAX_VERSION);
             check(features === undefined || (Array.isArray(features) && features.length <= 32 && features.every((name) => isText(name, 1, 32))));
             const decoded = { type: MessageType.SETTINGS, disappearAfter, version };
-            if (features) decoded.features = FEATURES.filter((name) => features.includes(name));
+            if (features) decoded.features = KNOWN_FEATURES.filter((name) => features.includes(name));
             return decoded;
         }
         case MessageType.CALL: {

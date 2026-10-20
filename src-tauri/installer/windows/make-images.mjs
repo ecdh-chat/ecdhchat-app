@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 
 const here = new URL('.', import.meta.url);
-const logo = readFileSync(new URL('../../public/favicon.svg', import.meta.url), 'utf8');
+const logo = readFileSync(new URL('../../../public/favicon.svg', import.meta.url), 'utf8');
 const font = '"Segoe UI", -apple-system, Roboto, Arial, sans-serif';
 
 const images = {

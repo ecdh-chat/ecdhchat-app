@@ -1,3 +1,5 @@
+#[cfg(target_os = "linux")]
+mod rtc;
 mod settings;
 mod tray;
 mod updates;
@@ -55,12 +57,34 @@ pub fn run() {
             updates::get_update,
             updates::install_update,
             window_action,
+            #[cfg(target_os = "linux")]
+            rtc::rtc_create,
+            #[cfg(target_os = "linux")]
+            rtc::rtc_create_channel,
+            #[cfg(target_os = "linux")]
+            rtc::rtc_set_local,
+            #[cfg(target_os = "linux")]
+            rtc::rtc_set_remote,
+            #[cfg(target_os = "linux")]
+            rtc::rtc_add_candidate,
+            #[cfg(target_os = "linux")]
+            rtc::rtc_send,
+            #[cfg(target_os = "linux")]
+            rtc::rtc_recv,
+            #[cfg(target_os = "linux")]
+            rtc::rtc_close,
         ])
         .on_window_event(window_event)
         .setup(|app| {
             // Installers register ecdhchat:// themselves; a dev build has to do it on start.
             #[cfg(all(debug_assertions, any(windows, target_os = "linux")))]
             app.deep_link().register_all()?;
+            // So does an AppImage, which is never installed. Without the desktop tools this needs,
+            // links just don't open the app.
+            #[cfg(all(not(debug_assertions), target_os = "linux"))]
+            if app.env().appimage.is_some() {
+                let _ = app.deep_link().register_all();
+            }
 
             let pending = app.deep_link().get_current()?.and_then(|urls| invite(&urls));
             app.manage(PendingInvite(Mutex::new(pending)));
@@ -75,6 +99,8 @@ pub fn run() {
             let state = SettingsState::load(app.handle());
             let current = state.get();
             app.manage(state);
+            #[cfg(target_os = "linux")]
+            app.manage(rtc::RtcState::default());
 
             let hidden = std::env::args().any(|arg| arg == AUTOSTART_ARG);
             open_window(app.handle(), &current, hidden)?;
@@ -154,7 +180,7 @@ fn open_window(app: &AppHandle, settings: &settings::Settings, hidden: bool) -> 
         .content_protected(settings.block_screenshots)
         // Lets the page take dropped files itself, like it does in a browser.
         .disable_drag_drop_handler()
-        .initialization_script(format!("window.__ECDH_SERVER__ = {};", js_string(SERVER)))
+        .initialization_script(format!("window.__ECDH_SERVER__ = {};window.__ECDH_OS__ = {};", js_string(SERVER), js_string(std::env::consts::OS)))
         // The window only ever shows the app's own page. Links from messages open in the browser.
         .on_navigation(move |url| {
             if is_app_page(url) {

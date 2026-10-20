@@ -40,13 +40,13 @@
                 <p class="lede">ecdh.chat connects two people directly, encrypts everything end to end, and keeps no accounts, no history and no copies. When the chat ends, it's gone.</p>
                 <div class="actions">
                     <a class="button primary large" href="/">Start a chat</a>
-                    <a class="button secondary large" href="/download">Get the Windows app</a>
+                    <a class="button secondary large" href="/download">Get the desktop app</a>
                 </div>
             </div>
 
             <section aria-labelledby="why">
                 <h2 id="why">Built around three promises</h2>
-                <p class="section-intro">No sign-up and no phone number. Open a link and talk, in your browser or in the Windows app.</p>
+                <p class="section-intro">No sign-up and no phone number. Open a link and talk, in your browser or in the desktop app for Windows and Linux.</p>
                 <div class="grid">
                     <div class="card">
                         <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm12 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM9 11h6v2H9z"/></svg></span>
@@ -111,6 +111,7 @@
                         <tr><th scope="row">Calls</th><td>Audio, video and screen sharing use WebRTC's DTLS-SRTP encryption. Because the certificate fingerprints feed into the code, the code check covers calls too. Call setup travels over the encrypted chat, never through the server.</td></tr>
                         <tr><th scope="row">Files and photos</th><td>Sent in encrypted chunks, up to 100 MB per file. Photos are redrawn before sending, which removes location and camera details, unless you choose to send the original.</td></tr>
                         <tr><th scope="row">Invite links</th><td>A link works for one person only. An unused link expires after 30 minutes.</td></tr>
+                        <tr><th scope="row">Linux app</th><td>Linux's web engine has no WebRTC, so the Linux app makes the connection itself, with the open-source webrtc-rs library inside the app. Everything above runs unchanged on top of it, and the code covers its certificate fingerprints just the same. Calls aren't in the Linux app yet.</td></tr>
                     </table>
                 </div>
             </section>
@@ -155,9 +156,9 @@
                         <p>HTTPS everywhere with HSTS, a strict Content Security Policy and Trusted Types, so text from the other person can never run as code on your screen.</p>
                     </div>
                     <div class="card">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.48 10.36 4.5v7.06H3V5.48zm0 13.04 7.36 1V12.5H3v6.02zM11.25 4.37 21 3v8.56h-9.75V4.37zm0 15.26L21 21v-8.5h-9.75v7.13z"/></svg></span>
+                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg></span>
                         <h3>Even tighter in the app</h3>
-                        <p>The Windows app carries its own copy of the code instead of loading it from the server, and its <a href="https://github.com/ecdh-chat/ecdhchat-app" rel="noopener">source is public</a>, so you can build it yourself. It can also hide its window from screenshots and screen sharing, and blur the chat when you look away.</p>
+                        <p>The desktop app carries its own copy of the code instead of loading it from the server, and its <a href="https://github.com/ecdh-chat/ecdhchat-app" rel="noopener">source is public</a>, so you can build it yourself. It can blur the chat when you look away, and on Windows also hide its window from screenshots and screen sharing.</p>
                     </div>
                 </div>
             </section>
@@ -176,7 +177,7 @@
                     </div>
                     <div class="card">
                         <h3>The website trusts our server</h3>
-                        <p>Like any web app, the page comes from our server each time you open it. The Windows app avoids this by shipping its code with the app.</p>
+                        <p>Like any web app, the page comes from our server each time you open it. The desktop app avoids this by shipping its code with the app.</p>
                     </div>
                     <div class="card">
                         <h3>Your device has to be safe</h3>

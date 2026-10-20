@@ -2,9 +2,27 @@
 // signaling server itself; the app loads the page from its own files, and its Rust side tells
 // it which server to use (window.__ECDH_SERVER__) before any script on the page runs.
 
+import { BridgePeerConnection } from './rtc-bridge.js';
+
 const INVITE_FRAGMENT = /^#?([0-9a-f-]{36}\.[A-Za-z0-9_-]{22})$/;
 
 export const isApp = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+// The app's operating system as Rust names it ("windows", "linux"), or null on the website.
+export const appOs = (isApp && window.__ECDH_OS__) || null;
+
+// WebKitGTK, which the app runs in on Linux, has no WebRTC, so there the connection runs in the
+// app's Rust side (rtc-bridge.js).
+export const usesRtcBridge = isApp && !window.RTCPeerConnection;
+// The bridge carries the chat but no media yet.
+export const callsAvailable = !usesRtcBridge;
+
+export function rtcAvailable() {
+    return usesRtcBridge || (typeof window !== 'undefined' && Boolean(window.RTCPeerConnection));
+}
+
+export function createPeerConnection(config) {
+    return usesRtcBridge ? new BridgePeerConnection(config) : new RTCPeerConnection(config);
+}
 
 // The app's webview doesn't notice when its window is minimized or loses focus, so the Rust
 // side reports it.

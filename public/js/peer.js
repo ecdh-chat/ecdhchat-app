@@ -1,3 +1,5 @@
+import { createPeerConnection } from './platform.js';
+
 const HIGH_WATER_MARK = 1024 * 1024;
 const LOW_WATER_MARK = 256 * 1024;
 
@@ -10,7 +12,7 @@ export class Peer {
         this.senders = new Map();
         this.signals = Promise.resolve();
         this.closed = new Promise((resolve) => { this.resolveClosed = resolve; });
-        this.pc = new RTCPeerConnection({ iceServers, iceTransportPolicy: relayOnly ? 'relay' : 'all' });
+        this.pc = createPeerConnection({ iceServers, iceTransportPolicy: relayOnly ? 'relay' : 'all' });
 
         this.pc.onicecandidate = ({ candidate }) => {
             if (candidate) onSignal({ candidate: candidate.toJSON() });

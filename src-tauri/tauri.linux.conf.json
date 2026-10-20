@@ -1,0 +1,13 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "bundle": {
+    "targets": ["appimage", "deb"],
+    "category": "SocialNetworking",
+    "createUpdaterArtifacts": false,
+    "linux": {
+      "deb": {
+        "section": "net"
+      }
+    }
+  }
+}

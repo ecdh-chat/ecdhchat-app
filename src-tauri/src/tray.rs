@@ -79,6 +79,8 @@ pub fn set_unread(app: AppHandle, unread: State<'_, Unread>, count: u32) {
             n => format!("ecdh.chat: {n} new messages"),
         }));
     }
+    // Only Windows badges the taskbar button; elsewhere the tray dot and the attention request do.
+    #[cfg(windows)]
     let _ = window.set_overlay_icon(if count > 0 { Some(dot_badge()) } else { None });
     if grew && !window.is_focused().unwrap_or(false) {
         let _ = window.request_user_attention(Some(UserAttentionType::Informational));
@@ -107,6 +109,7 @@ fn with_dot(icon: &Image<'_>) -> Image<'static> {
 }
 
 // A small red dot for the taskbar button.
+#[cfg(windows)]
 fn dot_badge() -> Image<'static> {
     const SIZE: u32 = 16;
     let mut rgba = vec![0; (SIZE * SIZE * 4) as usize];
@@ -137,6 +140,7 @@ mod tests {
         assert_eq!(marked.width(), 32);
     }
 
+    #[cfg(windows)]
     #[test]
     fn the_badge_is_a_round_dot() {
         let badge = dot_badge();

@@ -6,8 +6,8 @@ import { ask, initDesktop } from './desktop.js';
 import { plainText } from './format.js';
 import { cleanImage } from './images.js';
 import { startRecording, voiceMessageName } from './media.js';
-import { FEATURES, MessageType, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from './messages.js';
-import { inviteFragment, isApp, serverOrigin } from './platform.js';
+import { FEATURES, MessageType, NO_CALLS, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from './messages.js';
+import { callsAvailable, inviteFragment, isApp, rtcAvailable, serverOrigin } from './platform.js';
 import { decodeBase64Url, encodeBase64Url, randomSecret } from './secure-channel.js';
 import { connectSignaling } from './signaling.js';
 import { initTheme } from './theme.js';
@@ -97,7 +97,7 @@ async function start() {
     const { hash } = location;
     if (hash) history.replaceState(null, '', location.pathname);
 
-    if (!window.isSecureContext || !window.crypto?.subtle || !window.RTCPeerConnection) return end('unsupported');
+    if (!window.isSecureContext || !window.crypto?.subtle || !rtcAvailable()) return end('unsupported');
     relayAvailable = await fetchRelayAvailable();
 
     if (!hash) return create();
@@ -224,17 +224,21 @@ function connect(role) {
 function connectionOpened() {
     setPhase('open');
     ui.openChat();
-    call = new Call({
-        connection,
-        onSystem: ui.addSystem,
-        onBusyChange: (busy) => {
-            callBusy = busy;
-            updateControls();
-        },
-    });
+    call = callsAvailable
+        ? new Call({
+            connection,
+            onSystem: ui.addSystem,
+            onBusyChange: (busy) => {
+                callBusy = busy;
+                updateControls();
+            },
+        })
+        : null;
     // Older apps read only the fields they know from SETTINGS, so this is how both sides learn
     // what the other can do without upsetting a version that can't.
-    sendMessage(encode(MessageType.SETTINGS, { ...settings, features: FEATURES }));
+    const features = callsAvailable ? FEATURES : [...FEATURES.filter((name) => name !== 'screen'), NO_CALLS];
+    sendMessage(encode(MessageType.SETTINGS, { ...settings, features }));
+    if (!callsAvailable) ui.addSystem('Calls aren’t in the Linux app yet. For calls, open ecdh.chat in a browser.');
     updateStatus();
     updateControls();
 }
@@ -255,7 +259,7 @@ function updateControls() {
     if (phase === 'ended') return;
     ui.setChatControls({
         end: phase === 'connecting' || phase === 'open',
-        call: phase === 'open' && Boolean(call) && !callBusy,
+        call: phase === 'open' && Boolean(call) && !callBusy && !hasFeature(NO_CALLS),
     });
 }
 
@@ -343,7 +347,8 @@ function receive(message) {
             applySettings(message);
             break;
         case MessageType.CALL:
-            call?.handleMessage(message);
+            if (call) call.handleMessage(message);
+            else if (message.action === 'invite') declineCall(message.video);
             break;
         case MessageType.EDIT:
             edited(message);
@@ -403,8 +408,18 @@ function hasFeature(name) {
     return peerFeatures.includes(name);
 }
 
+// An older app can still try to call this one where calls aren't available.
+function declineCall(video) {
+    sendMessage(encode(MessageType.CALL, { action: 'decline', video }));
+    ui.addSystem('They tried to call. Calls aren’t in the Linux app yet; use ecdh.chat in a browser for calls.');
+}
+
 function setPeerFeatures(features) {
     peerFeatures = features;
+    if (callsAvailable && hasFeature(NO_CALLS)) {
+        ui.addSystem('They’re using the Linux app, which can’t take calls yet.');
+        updateControls();
+    }
     ui.setFeatures({ edit: hasFeature('edit') });
     call?.setScreenSharing(hasFeature('screen'));
     if (hasFeature('seen')) sendMessage(encode(MessageType.PREFS, { readReceipts }));

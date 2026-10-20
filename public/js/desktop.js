@@ -2,7 +2,7 @@
 // welcome, the privacy blur, quitting from the tray, and keyboard shortcuts.
 
 import * as alerts from './alerts.js';
-import { appInvoke, onAppBackground } from './platform.js';
+import { appInvoke, appOs, onAppBackground } from './platform.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,6 +19,11 @@ export async function initDesktop({ busy, leave, newChat, openSettings }) {
 
     $('appSettings').hidden = false;
     $('backgroundLegend').textContent = 'When the window is in the background';
+    // Linux can't keep a window out of screenshots, and it starts apps when you log in.
+    if (appOs === 'linux') {
+        for (const toggle of document.querySelectorAll('[data-app-setting="blockScreenshots"]')) toggle.closest('label').hidden = true;
+        for (const toggle of document.querySelectorAll('[data-app-setting="launchAtStartup"]')) toggle.nextElementSibling.firstChild.textContent = 'Start when you log in ';
+    }
     settings = await appInvoke('get_settings');
     const toggles = document.querySelectorAll('[data-app-setting]');
     const render = () => {

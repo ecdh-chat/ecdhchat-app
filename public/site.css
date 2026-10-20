@@ -458,13 +458,24 @@ p {
 
 /* Download */
 
+.downloads {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 36px;
+}
+
+/* The visitor's own system first (js/site.js). */
+.downloads[data-first="linux"] [data-os="linux"] {
+    order: -1;
+}
+
 .download-card {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 24px;
     align-items: center;
     max-width: 760px;
-    margin-top: 36px;
     padding: 28px;
     border: 1px solid var(--border);
     border-radius: 20px;
@@ -489,6 +500,10 @@ p {
     margin: 0 0 18px;
     color: var(--muted);
     font-size: 14px;
+}
+
+.download-card .actions {
+    margin-top: 0;
 }
 
 .checksum {
