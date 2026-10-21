@@ -1,6 +1,6 @@
 [package]
 name = "ecdh-chat"
-version = "4.0.0"
+version = "4.1.0"
 description = "Peer-to-peer end-to-end encrypted chat"
 license = "GPL-3.0-only"
 publish = false

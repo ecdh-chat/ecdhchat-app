@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHUNK_SIZE } from '../public/js/config.js';
 import { ProtocolError, randomId } from '../public/js/messages.js';
-import { IncomingTransfers, readChunks, safeFileName } from '../public/js/transfer.js';
+import { IncomingTransfers, TransferMeter, readChunks, safeFileName, timeLeft } from '../public/js/transfer.js';
 
 function offer(overrides = {}) {
     return { id: randomId(), name: 'report.pdf', size: 40000, mime: '', kind: 'file', caption: '', ...overrides };
@@ -96,5 +96,35 @@ describe('file transfers', () => {
         assert.equal(safeFileName('a​b\u0000c'), 'a_b_c');
         assert.equal(safeFileName('  ...  '), 'file');
         assert.equal(safeFileName('x'.repeat(500)).length, 120);
+    });
+});
+
+describe('transfer speed', () => {
+    test('measures the rate over the last few seconds and works out the time left', () => {
+        const meter = new TransferMeter(10_000_000, 0);
+        assert.deepEqual(meter.update(1_000_000, 1000), { rate: 1_000_000, secondsLeft: 9 });
+        assert.deepEqual(meter.update(2_000_000, 2000), { rate: 1_000_000, secondsLeft: 8 });
+
+        // It speeds up: once the slow start is out of the window, the rate is the new speed.
+        meter.update(4_000_000, 3000);
+        meter.update(6_000_000, 4000);
+        meter.update(8_000_000, 5000);
+        assert.deepEqual(meter.update(9_000_000, 5500), { rate: 2_000_000, secondsLeft: 0.5 });
+    });
+
+    test('has no rate or time left before any time has passed or while nothing moves', () => {
+        assert.deepEqual(new TransferMeter(100, 0).update(0, 0), { rate: 0, secondsLeft: Infinity });
+        const stalled = new TransferMeter(100, 0);
+        stalled.update(50, 1000);
+        assert.deepEqual(stalled.update(50, 5000), { rate: 0, secondsLeft: Infinity });
+    });
+
+    test('says the time left in seconds, minutes or hours', () => {
+        assert.equal(timeLeft(0.2), '1 s left');
+        assert.equal(timeLeft(20), '20 s left');
+        assert.equal(timeLeft(59.5), '1 min left');
+        assert.equal(timeLeft(150), '3 min left');
+        assert.equal(timeLeft(89 * 60), '89 min left');
+        assert.equal(timeLeft(2 * 3600), '2 h left');
     });
 });

@@ -210,7 +210,7 @@
     <div id="messageMenu" class="message-menu" popover>
         <div id="menuReactions" class="menu-reactions"></div>
         <button id="menuReply" type="button">Reply</button>
-        <button id="menuEdit" type="button">Edit</button>
+        <button id="menuEdit" type="button">Edit<kbd id="menuEditShortcut" class="menu-shortcut" aria-hidden="true" hidden>↑</kbd></button>
         <button id="menuCopy" type="button">Copy text</button>
         <button id="menuDelete" class="danger" type="button">Delete for everyone</button>
     </div>
@@ -318,12 +318,29 @@
         </div>
     </dialog>
 
-    <dialog id="lightbox" class="lightbox" aria-label="Image preview">
-        <img id="lightboxImage" alt="">
-        <div class="button-row">
-            <a id="lightboxDownload" class="secondary-button" download>Download</a>
-            <button class="secondary-button" type="button" data-close>Close</button>
+    <dialog id="viewer" class="viewer" aria-label="Image viewer">
+        <div class="viewer-bar">
+            <div class="viewer-title">
+                <span id="viewerName" class="viewer-name"></span>
+                <span id="viewerSize" class="viewer-size"></span>
+            </div>
+            <a id="viewerDownload" class="viewer-button" download aria-label="Download" title="Download">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
+            </a>
+            <button class="viewer-button" type="button" data-close autofocus aria-label="Close" title="Close (Esc)">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
         </div>
+        <div id="viewerStage" class="viewer-stage">
+            <img id="viewerImage" alt="" draggable="false">
+        </div>
+        <p id="viewerInfo" class="viewer-info"></p>
+        <button id="viewerPrev" class="viewer-nav prev" type="button" aria-label="Previous image" title="Previous image (←)" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+        </button>
+        <button id="viewerNext" class="viewer-nav next" type="button" aria-label="Next image" title="Next image (→)" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
     </dialog>
 </body>
 </html>

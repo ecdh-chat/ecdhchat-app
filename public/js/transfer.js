@@ -17,6 +17,34 @@ export function safeFileName(name) {
     return cleaned || 'file';
 }
 
+// How fast a file is moving and how long it has left, from how many of its bytes are done. The
+// rate covers about the last few seconds, so it follows changes without jumping with every chunk.
+export class TransferMeter {
+    constructor(total, now = performance.now(), window = 3000) {
+        this.total = total;
+        this.window = window;
+        this.samples = [{ at: now, bytes: 0 }];
+    }
+
+    update(bytes, now = performance.now()) {
+        const { samples } = this;
+        samples.push({ at: now, bytes });
+        // One sample from before the window stays, so the rate always spans all of it.
+        while (samples.length > 2 && samples[1].at <= now - this.window) samples.shift();
+        const seconds = (now - samples[0].at) / 1000;
+        const rate = seconds > 0 ? (bytes - samples[0].bytes) / seconds : 0;
+        return { rate, secondsLeft: rate > 0 ? (this.total - bytes) / rate : Infinity };
+    }
+}
+
+// "20 s left", "3 min left", "2 h left".
+export function timeLeft(seconds) {
+    const whole = Math.max(1, Math.ceil(seconds));
+    if (whole < 60) return `${whole} s left`;
+    const minutes = Math.ceil(seconds / 60);
+    return minutes < 90 ? `${minutes} min left` : `${Math.round(seconds / 3600)} h left`;
+}
+
 export class IncomingTransfers {
     constructor({ maxConcurrent = MAX_INCOMING_TRANSFERS, maxFileSize = MAX_FILE_SIZE } = {}) {
         this.maxConcurrent = maxConcurrent;

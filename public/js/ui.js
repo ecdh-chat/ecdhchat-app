@@ -1,10 +1,14 @@
 import qrcode from '../vendor/qrcode.mjs';
 import * as alerts from './alerts.js';
 import { MAX_FILE_SIZE } from './config.js';
+import { el, icon } from './dom.js';
 import { EMOJI_CATEGORIES } from './emoji.js';
 import { emojiOnly, parse } from './format.js';
 import { REACTIONS } from './messages.js';
 import { appInvoke, inBackground, isApp, onForeground, serverOrigin } from './platform.js';
+import { TransferMeter, timeLeft } from './transfer.js';
+import { addImage, forgetImages, initViewer, resetViewer } from './viewer.js';
+import { formatDuration, voicePlayer } from './voice-player.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -44,6 +48,7 @@ const els = {
     toneSelect: $('toneSelect'),
     readReceiptsToggle: $('readReceiptsToggle'),
     menuEdit: $('menuEdit'),
+    menuEditShortcut: $('menuEditShortcut'),
     recordingBar: $('recordingBar'),
     recordingTime: $('recordingTime'),
     recordCancel: $('recordCancel'),
@@ -79,9 +84,6 @@ const els = {
     infoDialog: $('infoDialog'),
     confirmEndDialog: $('confirmEndDialog'),
     confirmEndButton: $('confirmEndButton'),
-    lightbox: $('lightbox'),
-    lightboxImage: $('lightboxImage'),
-    lightboxDownload: $('lightboxDownload'),
     messageMenu: $('messageMenu'),
     menuReactions: $('menuReactions'),
     menuReply: $('menuReply'),
@@ -122,9 +124,18 @@ const CIPHER_PAIRS = 3;
 const CIPHER_STEP_MS = 85;
 // Messages from the same person this close together share one timestamp.
 const GROUP_MS = 5 * 60 * 1000;
+// Your own messages show one check once sent and two once delivered (colored once seen). They
+// only ever move forward, except when Seen is turned off.
+const TICK_STATES = ['sent', 'delivered', 'seen'];
+const TICK_PATHS = ['M1 5.6L4.1 8.7L10.3 2.2', 'M6.9 7.1L8.5 8.7L14.7 2.2'];
+// A transfer's status text changes at most this often (its bar moves with every chunk), and the
+// speed and time left show once it has been going this long.
+const PROGRESS_TEXT_MS = 250;
+const RATE_AFTER_MS = 1000;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-const urls = new Set();
+// Every object URL this page made, with the file behind it.
+const urls = new Map();
 const rows = new Map();
 const files = new Map();
 let handlers = {};
@@ -244,9 +255,6 @@ export function init(callbacks) {
         event.preventDefault();
         copyLink();
     });
-    els.lightbox.addEventListener('click', (event) => {
-        if (event.target === els.lightbox) els.lightbox.close();
-    });
     // Only the person scrolling can unpin the view. Scrolls caused by layout, such as a file card
     // shrinking just before its image grows, pull it back to the newest message instead.
     for (const type of ['wheel', 'touchmove', 'keydown', 'pointerdown']) {
@@ -274,6 +282,7 @@ export function init(callbacks) {
 
     initMessageMenu();
     initSettings();
+    initViewer();
 
     const hideIp = savedHideIp();
     for (const toggle of relayToggles) {
@@ -424,19 +433,15 @@ export function editMessage(id, text) {
 // "Seen" covers the given message and every earlier one of yours.
 export function markSeen(id) {
     for (const [rowId, entry] of rows) {
-        if (entry.mine && entry.tick && !entry.deleted) {
-            entry.tick.textContent = '✓✓';
-            entry.tick.classList.add('seen');
-            entry.tick.setAttribute('aria-label', 'Seen');
-        }
+        if (entry.mine && !entry.deleted) setTick(rowId, 'seen', 'Seen');
         if (rowId === id) break;
     }
 }
 
 export function clearSeen() {
     for (const entry of rows.values()) {
-        if (!entry.tick?.classList.contains('seen')) continue;
-        entry.tick.classList.remove('seen');
+        if (entry.tick?.dataset.state !== 'seen') continue;
+        entry.tick.dataset.state = 'delivered';
         entry.tick.setAttribute('aria-label', 'Delivered');
     }
 }
@@ -479,27 +484,36 @@ export function addFile({ id, from, name, size, kind, caption, url = null }) {
     cancel.addEventListener('click', () => handlers.onCancelFile(id));
 
     const card = el('div', { className: 'file-card' }, [body, el('div', { className: 'file-progress' }, [progress, status, cancel])]);
+    card.classList.toggle('is-image', kind === 'image' && Boolean(url));
     if (caption) card.append(el('div', { className: 'attachment-text' }, formatted(caption)));
 
-    files.set(id, { card, body, progress, status, cancel, mine: from === 'me' });
+    const startedAt = performance.now();
+    files.set(id, { card, body, progress, status, cancel, mine: from === 'me', size, meter: new TransferMeter(size, startedAt), startedAt, textAt: -Infinity });
     const entry = appendRow({ id, from, content: card, text: caption });
     if (url) entry.urls.push(url);
 }
 
 export function markSent(id) {
-    setTick(id, '✓', 'Sent');
+    setTick(id, 'sent', 'Sent');
 }
 
 export function markDelivered(id) {
-    setTick(id, '✓✓', 'Delivered');
+    setTick(id, 'delivered', 'Delivered');
 }
 
+// "Receiving 42% · 3.1 MB/s · 20 s left".
 export function setFileProgress(id, fraction) {
     const file = files.get(id);
     // A send already in flight can report progress after the transfer was cancelled.
     if (!file || file.finished) return;
     file.progress.value = fraction;
-    file.status.textContent = `${file.mine ? 'Sending' : 'Receiving'} ${Math.floor(fraction * 100)}%`;
+    const now = performance.now();
+    const { rate, secondsLeft } = file.meter.update(fraction * file.size, now);
+    if (now - file.textAt < PROGRESS_TEXT_MS) return;
+    file.textAt = now;
+    const parts = [`${file.mine ? 'Sending' : 'Receiving'} ${Math.floor(fraction * 100)}%`];
+    if (now - file.startedAt >= RATE_AFTER_MS && rate > 0) parts.push(`${formatBytes(Math.round(rate))}/s`, timeLeft(secondsLeft));
+    file.status.textContent = parts.join(' · ');
 }
 
 export function completeFile(id, { url, kind, name, size }) {
@@ -507,6 +521,7 @@ export function completeFile(id, { url, kind, name, size }) {
     if (!file) return;
     finishFile(file);
     file.body.replaceChildren(fileBody(kind, url, name, size));
+    file.card.classList.toggle('is-image', kind === 'image' && Boolean(url));
     rows.get(id)?.urls.push(url);
 }
 
@@ -529,6 +544,7 @@ export function markDeleted(id) {
     if (!entry || entry.deleted) return;
     entry.deleted = true;
     entry.text = '';
+    forgetImages(entry.urls);
     releaseUrls(entry);
     files.delete(id);
     entry.line.replaceChildren(el('div', { className: 'bubble deleted', textContent: 'This message was deleted' }));
@@ -539,6 +555,7 @@ export function markDeleted(id) {
 export function removeMessage(id) {
     const entry = rows.get(id);
     if (!entry) return;
+    forgetImages(entry.urls);
     releaseUrls(entry);
     files.delete(id);
     rows.delete(id);
@@ -608,8 +625,7 @@ export function showRecording(recording) {
 }
 
 export function setRecordingTime(ms) {
-    const seconds = Math.floor(ms / 1000);
-    els.recordingTime.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+    els.recordingTime.textContent = formatDuration(ms / 1000);
 }
 
 export function addSystem(content) {
@@ -631,7 +647,7 @@ export function openSettings() {
 
 export function objectUrl(blob) {
     const url = URL.createObjectURL(blob);
-    urls.add(url);
+    urls.set(url, blob);
     return url;
 }
 
@@ -755,11 +771,10 @@ function clearConversation() {
     pinned = true;
     setMissed(0);
     els.messageInput.value = '';
-    els.lightboxImage.removeAttribute('src');
-    els.lightboxDownload.removeAttribute('href');
+    resetViewer();
     rows.clear();
     files.clear();
-    for (const url of urls) URL.revokeObjectURL(url);
+    for (const url of urls.keys()) URL.revokeObjectURL(url);
     urls.clear();
 }
 
@@ -794,7 +809,7 @@ function appendRow({ id, from, content, text = '' }) {
     const meta = el('div', { className: 'msg-meta' }, [el('time', { textContent: formatTime(now), dateTime: now.toISOString() })]);
     let tick = null;
     if (mine) {
-        tick = el('span', { className: 'ticks' });
+        tick = el('span', { className: 'ticks' }, [icon('0 0 16 11', ...TICK_PATHS)]);
         tick.setAttribute('aria-label', 'Sending');
         meta.append(tick);
     }
@@ -835,6 +850,8 @@ function openMenu(id, anchor) {
     els.menuCopy.hidden = !entry.text;
     els.menuDelete.hidden = !entry.mine;
     els.menuEdit.hidden = !(features.edit && entry.mine && entry.editable && Date.now() - Number(entry.row.dataset.at) < EDIT_WINDOW_MS);
+    // ↑ in an empty message box edits your newest message, so its Edit shows the shortcut.
+    els.menuEditShortcut.hidden = els.menuEdit.hidden || id !== newestEditable();
     if (els.messageMenu.matches(':popover-open')) els.messageMenu.hidePopover();
     els.messageMenu.showPopover();
 
@@ -847,6 +864,15 @@ function openMenu(id, anchor) {
     const top = below + menu.height > window.innerHeight - 8 ? button.top - menu.height - 4 : below;
     els.messageMenu.style.left = `${left}px`;
     els.messageMenu.style.top = `${Math.max(8, top)}px`;
+}
+
+// Your newest text message that's still there: the one ↑ edits (main.js editLast).
+function newestEditable() {
+    let newest = null;
+    for (const [id, entry] of rows) {
+        if (entry.mine && entry.editable && !entry.deleted) newest = id;
+    }
+    return newest;
 }
 
 function menuAction(action) {
@@ -976,10 +1002,10 @@ function saveRecentEmoji(emoji) {
     }
 }
 
-function setTick(id, text, label) {
+function setTick(id, state, label) {
     const tick = rows.get(id)?.tick;
-    if (!tick) return;
-    tick.textContent = text;
+    if (!tick || TICK_STATES.indexOf(tick.dataset.state) >= TICK_STATES.indexOf(state)) return;
+    tick.dataset.state = state;
     tick.setAttribute('aria-label', label);
 }
 
@@ -991,21 +1017,15 @@ function finishFile(file) {
 }
 
 function fileBody(kind, url, name, size) {
-    if (kind === 'image' && url) return imageButton(url, name);
-    if (kind === 'audio' && url) return el('audio', { className: 'voice-player', controls: true, preload: 'metadata', src: url });
+    if (kind === 'image' && url) return imageButton(url, name, size);
+    if (kind === 'audio' && url) return voicePlayer(url, urls.get(url));
     return fileLabel(name, size, url);
 }
 
-function imageButton(url, name) {
+function imageButton(url, name, size) {
     const button = el('button', { type: 'button', className: 'image-button' }, [el('img', { src: url, alt: name })]);
     button.setAttribute('aria-label', `Open ${name}`);
-    button.addEventListener('click', () => {
-        els.lightboxImage.src = url;
-        els.lightboxImage.alt = name;
-        els.lightboxDownload.href = url;
-        els.lightboxDownload.download = name;
-        open(els.lightbox);
-    });
+    addImage(button, { url, name, size: formatBytes(size) });
     return button;
 }
 
@@ -1162,12 +1182,4 @@ function continuesGroup(previous, row) {
 
 function formatTime(date) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// Builds elements through DOM properties and text nodes only, so nothing is parsed as HTML.
-function el(tag, props = {}, children = []) {
-    const node = document.createElement(tag);
-    Object.assign(node, props);
-    node.append(...children);
-    return node;
 }

@@ -1,6 +1,6 @@
 {
   "name": "ecdhchat-app",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "private": true,
   "description": "The ecdh.chat desktop app: private, peer-to-peer chat, encrypted end to end",
   "license": "GPL-3.0-only",

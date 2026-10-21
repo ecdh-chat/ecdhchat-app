@@ -578,13 +578,30 @@ button, input, textarea {
     opacity: 0.4;
 }
 
-.ticks.seen {
-    color: var(--focus);
+/* Your own messages: nothing while sending, one check once sent, two once delivered, colored once
+   seen. The second check tucks in behind the first. */
+.ticks {
+    display: inline-flex;
+    align-items: center;
 }
 
-.ticks {
-    letter-spacing: -0.25em;
-    padding-right: 0.25em;
+.ticks svg {
+    width: 16px;
+    height: 11px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ticks:not([data-state]) svg,
+.ticks[data-state="sent"] path + path {
+    display: none;
+}
+
+.ticks[data-state="seen"] {
+    color: var(--focus);
 }
 
 /* The other person typing: a bubble of hex that keeps re-rolling, like ciphertext being written. */
@@ -693,23 +710,78 @@ button, input, textarea {
     min-width: 0;
 }
 
+/* An image shows on its own, in its own shape, without the card around it. A caption gets a
+   bubble of its own right under it. */
+.file-card.is-image,
+.msg-row.me .file-card.is-image {
+    width: fit-content;
+    max-width: min(320px, 100%);
+    padding: 0;
+    border-radius: 14px;
+    background: none;
+    color: var(--text);
+}
+
+.msg-row.me .file-card.is-image {
+    align-items: flex-end;
+}
+
+.msg-row.peer .file-card.is-image {
+    align-items: flex-start;
+}
+
+.file-card.is-image .file-progress {
+    align-self: stretch;
+    min-width: 160px;
+    color: var(--muted);
+}
+
+/* The caption joins its image the way grouped bubbles join: close, with the corners between
+   them squared off on the sender's side. */
+.file-card.is-image:has(.attachment-text) {
+    gap: 2px;
+}
+
+.file-card.is-image .attachment-text {
+    padding: 9px 14px;
+    border-radius: 4px 16px 16px 4px;
+    background: var(--bubble-peer);
+    line-height: 1.4;
+}
+
+.msg-row.me .file-card.is-image .attachment-text {
+    border-radius: 16px 4px 4px 16px;
+    background: var(--bubble-me);
+    color: var(--bubble-me-text);
+}
+
+.msg-row.peer .file-card.is-image:has(.attachment-text) .image-button {
+    border-bottom-left-radius: 4px;
+}
+
+.msg-row.me .file-card.is-image:has(.attachment-text) .image-button {
+    border-bottom-right-radius: 4px;
+}
+
 .image-button {
     display: block;
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
     padding: 0;
     overflow: hidden;
     border: none;
-    border-radius: 8px;
+    border-radius: 14px;
     background: none;
     cursor: zoom-in;
 }
 
 .image-button img {
     display: block;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
+    height: auto;
     max-height: 320px;
-    object-fit: contain;
-    border-radius: 8px;
+    border-radius: inherit;
 }
 
 .file-label {
@@ -757,21 +829,29 @@ button, input, textarea {
     color: inherit;
 }
 
+/* The bar on top, the status and Cancel under it. It folds away once there's nothing left in it. */
 .file-progress {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 8px;
+    gap: 4px 8px;
     font-size: 12px;
 }
 
+.file-progress:not(:has(> :not([hidden]))) {
+    display: none;
+}
+
 .file-progress progress {
-    flex: 1;
-    min-width: 40px;
+    grid-column: 1 / -1;
+    width: 100%;
     height: 6px;
     accent-color: currentColor;
 }
 
 .file-status {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
     opacity: 0.8;
 }
@@ -1106,18 +1186,160 @@ dialog .fine-print {
     color: var(--text);
 }
 
-.lightbox {
-    max-width: min(92vw, 1100px);
-    padding: 16px;
+/* The image viewer (viewer.js): the picture as large as the window allows, on a dark backdrop in
+   either theme, with its name and buttons above and who sent it below. */
+.viewer {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: #fafafa;
+    box-shadow: none;
 }
 
-.lightbox img {
-    display: block;
-    max-width: 100%;
-    max-height: 75vh;
-    margin: 0 auto;
-    border-radius: 8px;
-    object-fit: contain;
+.viewer[open] {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 0;
+    animation: viewer-in 0.18s ease-out;
+}
+
+.viewer::backdrop {
+    background: rgba(9, 9, 11, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+@keyframes viewer-in {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+}
+
+.viewer-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: calc(10px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 10px calc(20px + env(safe-area-inset-left));
+}
+
+.viewer-title {
+    display: flex;
+    flex: 1;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+}
+
+.viewer-name {
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.viewer-size {
+    flex: none;
+    color: #a1a1aa;
+    font-size: 13px;
+}
+
+.viewer-button,
+.viewer-nav {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: inherit;
+    cursor: pointer;
+}
+
+.viewer-button:hover,
+.viewer-nav:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.viewer-button svg,
+.viewer-nav svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+}
+
+.viewer-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    width: 44px;
+    height: 44px;
+    transform: translateY(-50%);
+}
+
+.viewer-nav.prev {
+    left: calc(16px + env(safe-area-inset-left));
+}
+
+.viewer-nav.next {
+    right: calc(16px + env(safe-area-inset-right));
+}
+
+.viewer-nav:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.viewer-stage {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    touch-action: none;
+}
+
+/* Centered in the stage and fitted to it, clear of the side buttons. Zooming and moving are a
+   transform on top (viewer.js). */
+.viewer-stage img {
+    position: absolute;
+    inset: 8px 76px;
+    max-width: calc(100% - 152px);
+    max-height: calc(100% - 16px);
+    margin: auto;
+    border-radius: 4px;
+    cursor: zoom-in;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    transition: transform 0.18s ease;
+}
+
+.viewer-stage img.zoomed {
+    cursor: grab;
+}
+
+.viewer-stage img.dragging {
+    cursor: grabbing;
+    transition: none;
+}
+
+.viewer-info {
+    margin: 0;
+    padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+    color: #d4d4d8;
+    font-size: 13px;
+    text-align: center;
 }
 
 .drop-overlay {
@@ -1252,11 +1474,98 @@ dialog .fine-print {
     outline-offset: 2px;
 }
 
+/* Voice messages (voice-player.js), drawn in the bubble's own colors. */
+.file-card:has(.voice-player) {
+    width: 280px;
+}
+
 .voice-player {
-    display: block;
-    width: 100%;
-    min-width: 220px;
-    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px 6px 2px 2px;
+}
+
+.voice-play {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: currentColor;
+    cursor: pointer;
+}
+
+.voice-play svg {
+    grid-area: 1 / 1;
+    width: 18px;
+    height: 18px;
+    fill: var(--bubble-peer);
+}
+
+.msg-row.me .voice-play svg {
+    fill: var(--bubble-me);
+}
+
+.voice-player.playing .voice-play svg:first-child,
+.voice-player:not(.playing) .voice-play svg:last-child {
+    display: none;
+}
+
+.voice-seek {
+    flex: 1;
+    min-width: 0;
+    height: 4px;
+    margin: 0;
+    border-radius: 2px;
+    background: linear-gradient(to right, currentColor calc(var(--progress, 0) * 100%), rgba(127, 127, 127, 0.4) 0);
+    color: inherit;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Until the length is known there's nothing to seek through. */
+.voice-seek:disabled {
+    cursor: default;
+}
+
+.voice-seek:disabled::-webkit-slider-thumb {
+    opacity: 0.5;
+}
+
+.voice-seek::-webkit-slider-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 50%;
+    background: currentColor;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.voice-seek::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.voice-seek::-moz-range-track {
+    background: transparent;
+}
+
+.voice-time {
+    flex: none;
+    min-width: 2.8em;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    opacity: 0.8;
 }
 
 .message-menu {
@@ -1314,6 +1623,14 @@ dialog .fine-print {
 
 .message-menu > button.danger {
     color: var(--danger);
+}
+
+/* A keyboard shortcut for the item, such as ↑ for Edit. */
+.menu-shortcut {
+    float: right;
+    margin-left: 16px;
+    color: var(--muted);
+    font-family: inherit;
 }
 
 /* Emoji picker (emoji.js), opened from the composer. */
@@ -1751,6 +2068,27 @@ dialog {
 
     .text-button {
         padding: 8px;
+    }
+
+    /* The picture goes edge to edge, with smaller side buttons on top of it. */
+    .viewer-stage img {
+        inset: 0;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    .viewer-nav {
+        width: 36px;
+        height: 36px;
+        background: rgba(0, 0, 0, 0.45);
+    }
+
+    .viewer-nav.prev {
+        left: calc(6px + env(safe-area-inset-left));
+    }
+
+    .viewer-nav.next {
+        right: calc(6px + env(safe-area-inset-right));
     }
 }
 
