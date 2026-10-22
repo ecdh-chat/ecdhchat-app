@@ -21,6 +21,7 @@
             <a class="brand" href="/about"><img src="/favicon.svg" alt="" width="28" height="28">ecdh.chat</a>
             <nav class="site-nav" aria-label="Site">
                 <a href="/about" aria-current="page">About</a>
+                <a href="/faq">FAQ</a>
                 <a href="/download">Download</a>
             </nav>
             <button id="themeToggle" class="icon-button theme-toggle" type="button" data-theme="system" aria-label="Theme" title="Theme">
@@ -117,100 +118,6 @@
                     </table>
                 </div>
             </section>
-
-            <section aria-labelledby="sees">
-                <h2 id="sees">What our servers can and can't see</h2>
-                <p class="section-intro">Being clear about this matters more than sounding perfect.</p>
-                <div class="ledger">
-                    <div class="card">
-                        <h3><span class="tag good">Never</span> What stays private</h3>
-                        <ul>
-                            <li>Your messages, files, voice notes and calls</li>
-                            <li>The secret in your invite link</li>
-                            <li>Your encryption keys and verification code</li>
-                            <li>Who you are: there are no accounts, names or phone numbers</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3><span class="tag warn">Briefly</span> What the server handles</h3>
-                        <ul>
-                            <li>Your IP address and the other person's, while connecting</li>
-                            <li>The room name and when a chat starts (not when it ends)</li>
-                            <li>Connection setup data: network addresses and certificate fingerprints</li>
-                            <li>On a phone, if you let it use the relay: both IP addresses and how much encrypted data flows, but never what's in it</li>
-                        </ul>
-                    </div>
-                </div>
-                <p class="section-intro">Nothing goes into a database. Waiting rooms exist only in the server's memory, and our web server and relay don't keep logs of individual chats.</p>
-            </section>
-
-            <section aria-labelledby="web">
-                <h2 id="web">No trackers, no third parties</h2>
-                <div class="grid">
-                    <div class="card">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 0 1 5 5c0 .65-.13 1.26-.36 1.83l2.92 2.92A11.82 11.82 0 0 0 23 12c-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46A11.8 11.8 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55A2.82 2.82 0 0 0 9 12a3 3 0 0 0 3 3c.22 0 .44-.03.65-.08l1.55 1.55A4.97 4.97 0 0 1 7 12c0-.79.2-1.53.53-2.2z"/></svg></span>
-                        <h3>Nothing watching you</h3>
-                        <p>No analytics, ads, cookies or tracking pixels. Nothing is loaded from other companies: no fonts, no scripts, and the connection checks run on our own server.</p>
-                    </div>
-                    <div class="card">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></span>
-                        <h3>A locked-down page</h3>
-                        <p>HTTPS everywhere with HSTS, a strict Content Security Policy and Trusted Types, so text from the other person can never run as code on your screen.</p>
-                    </div>
-                    <div class="card">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg></span>
-                        <h3>Even tighter in the app</h3>
-                        <p>The desktop app carries its own copy of the code instead of loading it from the server, and its <a href="https://github.com/ecdh-chat/ecdhchat-app" rel="noopener">source is public</a>, so you can build it yourself. It can blur the chat when you look away, and on Windows also hide its window from screenshots and screen sharing.</p>
-                    </div>
-                </div>
-            </section>
-
-            <section aria-labelledby="limits">
-                <h2 id="limits">Good to know</h2>
-                <p class="section-intro">Every tool has limits. These are ours.</p>
-                <div class="grid">
-                    <div class="card">
-                        <h3>You both need to be online</h3>
-                        <p>No server holds your messages, so a chat happens live, while you both have it open.</p>
-                    </div>
-                    <div class="card">
-                        <h3>The other person can see your IP</h3>
-                        <p>That's how direct connections work, and it's true through the relay too. On a shared network they can also see your device's local address (like 192.168.x.x).</p>
-                    </div>
-                    <div class="card">
-                        <h3>Links take you out of the chat</h3>
-                        <p>Opening a link someone sends opens it in your browser, and that site sees your IP address. The app asks before opening one and shows where it goes.</p>
-                    </div>
-                    <div class="card">
-                        <h3>What they've seen, they can keep</h3>
-                        <p>Disappearing messages and delete for everyone clear their screen too, but only if their app plays along. Anyone can take a photo of a screen.</p>
-                    </div>
-                    <div class="card">
-                        <h3>Files keep their details</h3>
-                        <p>Photos are cleaned before sending, but other files (and photos sent as originals) arrive as they are, including the file name and things like the author of a document.</p>
-                    </div>
-                    <div class="card">
-                        <h3>Your browser may remember the link</h3>
-                        <p>The page clears the link from the address bar, but your browser's history may still hold it. It's useless once used, but a private window avoids it entirely.</p>
-                    </div>
-                    <div class="card">
-                        <h3>Screenshot blocking has limits</h3>
-                        <p>On Windows it stops screenshots and screen sharing of the window, not programs that read the screen's text through accessibility features. Linux has no such protection.</p>
-                    </div>
-                    <div class="card">
-                        <h3>Installers are signed for updates only</h3>
-                        <p>Updates are checked against our signing key, but the Windows installer isn't Authenticode-signed yet, so Windows may warn the first time. Download it only from ecdh.chat.</p>
-                    </div>
-                    <div class="card">
-                        <h3>The website trusts our server</h3>
-                        <p>Like any web app, the page comes from our server each time you open it. The desktop app avoids this by shipping its code with the app.</p>
-                    </div>
-                    <div class="card">
-                        <h3>Your device has to be safe</h3>
-                        <p>Encryption can't protect against malware on a device, someone looking over your shoulder, or a camera pointed at the screen.</p>
-                    </div>
-                </div>
-            </section>
         </div>
     </main>
 
@@ -221,6 +128,7 @@
                 <a href="/">Open chat</a>
                 <a href="/about">About</a>
                 <a href="/about#security">Security</a>
+                <a href="/faq">FAQ</a>
                 <a href="/download">Download</a>
                 <a href="/contact">Contact</a>
                 <a href="/privacy">Privacy</a>

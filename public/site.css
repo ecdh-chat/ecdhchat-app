@@ -256,6 +256,25 @@ h3 {
     line-height: 1.35;
 }
 
+/* The FAQ: plain questions and answers. */
+.faq {
+    max-width: 720px;
+}
+
+.faq h2 {
+    margin: 32px 0 6px;
+    font-size: 20px;
+}
+
+.faq h2:first-child {
+    margin-top: 0;
+}
+
+.faq p {
+    margin: 0;
+    color: var(--muted);
+}
+
 .section-intro {
     max-width: 680px;
     margin: 0 0 28px;
