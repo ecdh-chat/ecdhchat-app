@@ -7,7 +7,7 @@ import { plainText } from './format.js';
 import { cleanImage } from './images.js';
 import { startRecording, voiceMessageName } from './media.js';
 import { FEATURES, MessageType, NO_CALLS, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from './messages.js';
-import { callsAvailable, inviteFragment, isApp, rtcAvailable, serverOrigin } from './platform.js';
+import { callsAvailable, inviteFragment, isApp, isMobileBrowser, rtcAvailable, serverOrigin } from './platform.js';
 import { decodeBase64Url, encodeBase64Url, randomSecret } from './secure-channel.js';
 import { connectSignaling } from './signaling.js';
 import { initTheme } from './theme.js';
@@ -34,7 +34,6 @@ let phase = 'starting';
 let roomId = null;
 let secret = null;
 let iceServers = [];
-let relayAvailable = false;
 let signaling = null;
 let connection = null;
 let call = null;
@@ -98,7 +97,6 @@ async function start() {
     if (hash) history.replaceState(null, '', location.pathname);
 
     if (!window.isSecureContext || !window.crypto?.subtle || !rtcAvailable()) return end('unsupported');
-    relayAvailable = await fetchRelayAvailable();
 
     if (!hash) return create();
 
@@ -109,7 +107,7 @@ async function start() {
     roomId = match[1];
     secret = decoded;
     setPhase('invited');
-    ui.showJoin(relayAvailable, `ecdhchat://join${hash}`);
+    ui.showJoin(`ecdhchat://join${hash}`);
 }
 
 // Returns false when the link isn't an invite for this server. Only the app opens pasted links.
@@ -138,18 +136,56 @@ async function leaveChat() {
     if (phase === 'open') await connection.sayGoodbye('ended');
 }
 
-function create() {
+async function create() {
     secret = randomSecret();
     setPhase('inviting');
-    ui.showInvitePending(relayAvailable);
-    openSignaling().send({ type: 'create' });
+    ui.showInvitePending();
+    const relay = await relayChoice();
+    if (phase !== 'inviting') return;
+    openSignaling().send({ type: 'create', relay });
 }
 
-function join() {
+async function join() {
+    if (phase !== 'invited') return;
+    const relay = await relayChoice();
     if (phase !== 'invited') return;
     setPhase('joining');
     ui.hideOverlays();
-    openSignaling().send({ type: 'join', roomId });
+    openSignaling().send({ type: 'join', roomId, relay });
+}
+
+// Phones on mobile data usually can't connect directly, so they're offered our relay. It's only
+// used when a direct connection fails, and it only ever carries encrypted data. Computers and
+// the desktop app always connect directly.
+async function relayChoice() {
+    if (!isMobileBrowser()) return false;
+    const saved = savedRelayChoice();
+    if (saved !== null) return saved;
+
+    const { confirmed, remember } = await ui.choose({
+        title: 'Connect through our relay?',
+        text: 'You’re about to connect through our relay server. It’s needed on mobile data, but it never sees your messages, files or calls: they stay encrypted end to end. It only sees both IP addresses and how much data flows, and keeps no logs.',
+        confirm: 'Use relay',
+        cancel: 'Direct only',
+        remember: true,
+    });
+    if (remember) {
+        try {
+            localStorage.setItem('relayChoice', confirmed ? 'relay' : 'direct');
+        } catch {
+            // Not saved; asked again next time.
+        }
+    }
+    return confirmed;
+}
+
+function savedRelayChoice() {
+    try {
+        const saved = localStorage.getItem('relayChoice');
+        return saved === 'relay' ? true : saved === 'direct' ? false : null;
+    } catch {
+        return null;
+    }
 }
 
 function openSignaling() {
@@ -180,7 +216,9 @@ function handleSignaling(message) {
             connect('creator');
             break;
 
+        // Once the chat is open its connection is set up, so nothing more is taken from the server.
         case 'signal':
+            if (phase === 'open') return;
             if (message.signal && typeof message.signal === 'object') connection?.handleSignal(message.signal);
             break;
 
@@ -208,7 +246,6 @@ function connect(role) {
             roomId,
             secret,
             iceServers,
-            relayOnly: ui.relayOnly(),
             sendSignal: (signal) => signaling?.send({ type: 'signal', signal }),
             onOpen: connectionOpened,
             onMessage: receive,
@@ -416,6 +453,7 @@ function declineCall(video) {
 
 function setPeerFeatures(features) {
     peerFeatures = features;
+    if (connection) connection.padding = hasFeature('pad');
     if (callsAvailable && hasFeature(NO_CALLS)) {
         ui.addSystem('They’re using the Linux app, which can’t take calls yet.');
         updateControls();
@@ -773,13 +811,4 @@ function shortName(name) {
     const dot = name.lastIndexOf('.');
     const extension = dot > 0 && name.length - dot <= 16 ? name.slice(dot) : '';
     return name.slice(0, 255 - extension.length) + extension;
-}
-
-async function fetchRelayAvailable() {
-    try {
-        const res = await fetch(`${serverOrigin()}/api/config`, { cache: 'no-store' });
-        return res.ok && (await res.json()).relay === true;
-    } catch {
-        return false;
-    }
 }

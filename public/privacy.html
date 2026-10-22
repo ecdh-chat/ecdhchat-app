@@ -63,7 +63,7 @@
                         <tr><th scope="row">IP address</th><td>When you open the website or start a chat. Used to deliver the page, introduce the two devices and limit how many chats one network can start. Kept in memory while you're connected, and the abuse counters are dropped within about a minute.</td></tr>
                         <tr><th scope="row">Connection setup</th><td>Network addresses and encryption fingerprints the two devices exchange to connect. Passed straight through and not stored.</td></tr>
                         <tr><th scope="row">Waiting rooms</th><td>A random room name, kept in memory until the other person joins or for 30 minutes at most.</td></tr>
-                        <tr><th scope="row">Relay (Hide my IP)</th><td>If the relay is used, it sees both IP addresses and how much encrypted data flows while the chat lasts. It can't see the contents and doesn't keep a record afterwards.</td></tr>
+                        <tr><th scope="row">Relay (phones)</th><td>Only on a phone, and only if you agree when asked: if a direct connection fails, the chat goes through our relay. It sees both IP addresses and how much encrypted data flows while the chat lasts. It can't see the contents and keeps no logs.</td></tr>
                         <tr><th scope="row">Downloads</th><td>The installer is served without logging who downloads it.</td></tr>
                         <tr><th scope="row">Email to us</th><td>If you email one of our addresses, we receive your address and message, and keep them as long as needed to reply. Ask us to delete them any time.</td></tr>
                     </table>
@@ -72,14 +72,14 @@
 
             <section aria-labelledby="device">
                 <h2 id="device">On your device</h2>
-                <p class="section-intro">Your browser or the app remembers a few preferences, such as the theme, sounds, notifications and Hide my IP. The desktop app also keeps its settings in a small file on your computer. These never leave your device and contain nothing about your chats. Clear them with your browser's site data, or by uninstalling the app and choosing to delete its data. On Linux, delete the app's <code>chat.ecdh.desktop</code> folders in <code>~/.config</code> and <code>~/.local/share</code>.</p>
+                <p class="section-intro">Your browser or the app remembers a few preferences, such as the theme, sounds, notifications and, on a phone, whether to use the relay. The desktop app also keeps its settings in a small file on your computer. These never leave your device and contain nothing about your chats. Clear them with your browser's site data, or by uninstalling the app and choosing to delete its data. On Linux, delete the app's <code>chat.ecdh.desktop</code> folders in <code>~/.config</code> and <code>~/.local/share</code>.</p>
             </section>
 
             <section aria-labelledby="providers">
                 <h2 id="providers">Companies that help us run it</h2>
                 <div class="table-scroll">
                     <table class="spec">
-                        <tr><th scope="row">Hetzner Online</th><td>Hosts our server in Helsinki, Finland (EU). Website, connection setup and relay traffic pass through it.</td></tr>
+                        <tr><th scope="row">Hetzner Online</th><td>Hosts our two servers in Helsinki, Finland (EU): one for the website and connection setup, one for connection checks (STUN) and relay traffic.</td></tr>
                         <tr><th scope="row">Cloudflare</th><td>Runs the domain's DNS and forwards email sent to our addresses. Website and chat traffic don't go through Cloudflare. Cloudflare is a US company and may process forwarded email outside the EU under its data processing terms.</td></tr>
                         <tr><th scope="row">Let's Encrypt</th><td>Issues our HTTPS certificate. It receives no information about visitors.</td></tr>
                     </table>

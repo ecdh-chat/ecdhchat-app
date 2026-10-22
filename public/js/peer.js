@@ -4,7 +4,7 @@ const HIGH_WATER_MARK = 1024 * 1024;
 const LOW_WATER_MARK = 256 * 1024;
 
 export class Peer {
-    constructor({ role, iceServers, relayOnly, onSignal, onOpen, onFrame, onClose, onStateChange, onTrack }) {
+    constructor({ role, iceServers, onSignal, onOpen, onFrame, onClose, onStateChange, onTrack }) {
         this.role = role;
         this.onSignal = onSignal;
         this.handlers = { onOpen, onFrame, onClose };
@@ -12,7 +12,7 @@ export class Peer {
         this.senders = new Map();
         this.signals = Promise.resolve();
         this.closed = new Promise((resolve) => { this.resolveClosed = resolve; });
-        this.pc = createPeerConnection({ iceServers, iceTransportPolicy: relayOnly ? 'relay' : 'all' });
+        this.pc = createPeerConnection({ iceServers, iceTransportPolicy: 'all' });
 
         this.pc.onicecandidate = ({ candidate }) => {
             if (candidate) onSignal({ candidate: candidate.toJSON() });

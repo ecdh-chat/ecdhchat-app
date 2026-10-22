@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHUNK_SIZE, MAX_FILE_SIZE, MAX_TEXT_LENGTH } from '../public/js/config.js';
-import { FEATURES, MessageType, ProtocolError, decode, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from '../public/js/messages.js';
+import { FEATURES, MessageType, ProtocolError, decode, encode, encodeChunk, encodeTyping, encodeVerified, pad, randomId } from '../public/js/messages.js';
 
 const id = randomId();
 const other = randomId();
@@ -117,5 +117,34 @@ describe('chat messages', () => {
         // it would end the chat. That's why they're gated.
         assert.throws(() => old.decode(encode(MessageType.EDIT, { id, text: 'x' })), old.ProtocolError);
         assert.throws(() => old.decode(encode(MessageType.CALL, { action: 'screen-on', video: true })), old.ProtocolError);
+    });
+
+    test('pads short messages to fixed sizes and reads them back', () => {
+        const typing = encodeTyping(true);
+        const short = encode(MessageType.TEXT, { id, text: 'hi' });
+        const long = encode(MessageType.TEXT, { id, text: 'x'.repeat(2000) });
+        assert.equal(pad(typing).length, 256);
+        assert.equal(pad(short).length, 256);
+        assert.equal(pad(long).length, 4096);
+        assert.deepEqual(decode(pad(typing)), decode(typing));
+        assert.deepEqual(decode(pad(long)), decode(long));
+
+        // Too big for a bucket: sent as it is.
+        const chunk = encodeChunk(id, 0, new Uint8Array(CHUNK_SIZE));
+        assert.equal(pad(chunk), chunk);
+        assert.equal(pad(pad(short)).length, 256);
+        assert.ok(FEATURES.includes('pad'));
+
+        const bad = (bytes) => assert.throws(() => decode(bytes), ProtocolError);
+        bad(Uint8Array.of(MessageType.PADDED, 0, 0));
+        const lying = pad(short);
+        new DataView(lying.buffer).setUint32(1, 300);
+        bad(lying);
+        const empty = pad(short);
+        new DataView(empty.buffer).setUint32(1, 0);
+        bad(empty);
+        const nested = new Uint8Array(256);
+        nested.set([MessageType.PADDED, 0, 0, 0, 10, MessageType.PADDED]);
+        bad(nested);
     });
 });

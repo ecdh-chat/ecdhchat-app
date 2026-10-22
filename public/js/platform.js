@@ -16,6 +16,17 @@ export const usesRtcBridge = isApp && !window.RTCPeerConnection;
 // The bridge carries the chat but no media yet.
 export const callsAvailable = !usesRtcBridge;
 
+// Phones and tablets. On mobile data they usually can't connect directly, so they're the only
+// ones offered the relay. The desktop app never is.
+export function isMobileBrowser(nav = typeof navigator !== 'undefined' ? navigator : null) {
+    if (isApp || !nav) return false;
+    if (typeof nav.userAgentData?.mobile === 'boolean' && nav.userAgentData.mobile) return true;
+    const ua = String(nav.userAgent || '');
+    if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
+    // iPadOS reports itself as a Mac, but a Mac has no touch screen.
+    return /Macintosh/.test(ua) && nav.maxTouchPoints > 1;
+}
+
 export function rtcAvailable() {
     return usesRtcBridge || (typeof window !== 'undefined' && Boolean(window.RTCPeerConnection));
 }

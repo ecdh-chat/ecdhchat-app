@@ -100,7 +100,8 @@
                 </div>
                 <div id="attachments" class="attachments" hidden>
                     <div id="attachmentList" class="attachment-list"></div>
-                    <label id="originalRow" class="toggle-row" hidden>
+                    <p id="fileDetailsNote" class="fine-print" hidden>Files are sent as they are, with their name and any details inside them, like a document's author.</p>
+                <label id="originalRow" class="toggle-row" hidden>
                         <input type="checkbox" id="originalToggle">
                         <span>Send images as original files <small>(keeps location and other hidden details)</small></span>
                     </label>
@@ -160,10 +161,6 @@
                     <p>Scan the code, or click the link to copy it and send it to the person you want to talk to.</p>
                     <canvas id="qrCanvas" class="qr" role="img" aria-label="QR code of the invite link" hidden></canvas>
                     <div id="inviteLink" class="url-display" role="button" tabindex="0" title="Click to copy">Creating a link…</div>
-                    <label class="toggle-row relay-option" hidden>
-                        <input type="checkbox" class="relay-toggle">
-                        <span>Hide my IP address <small>(sends the chat through a relay; can be slower)</small></span>
-                    </label>
                     <button id="newRoomButton" class="link-button" type="button">Generate a new room</button>
                     <div id="pasteInvite" class="paste-invite" hidden>
                         <label for="pasteInput">Got a link from someone?</label>
@@ -181,10 +178,6 @@
                     <h2 id="joinTitle">You’re invited to a private chat</h2>
                     <p>Messages and files go straight to the other person, encrypted end to end. Nothing is stored, and the chat ends when either of you leaves.</p>
                     <p id="ipNotice" class="fine-print"></p>
-                    <label class="toggle-row relay-option" hidden>
-                        <input type="checkbox" class="relay-toggle">
-                        <span>Hide my IP address <small>(sends the chat through a relay; can be slower)</small></span>
-                    </label>
                     <button id="joinButton" class="primary-button" type="button">Join chat</button>
                     <p id="openInApp" class="fine-print" hidden>Have the desktop app? <a id="openInAppLink" href="#">Open this invite in it</a></p>
                 </div>
@@ -236,7 +229,7 @@
         <h2 id="settingsTitle">Settings</h2>
         <fieldset id="disappearGroup" class="setting-group" disabled>
             <legend>Disappearing messages</legend>
-            <p class="fine-print">New messages vanish from both screens after this long.</p>
+            <p class="fine-print">New messages vanish from both screens after this long. The other person can still save or photograph what they see.</p>
             <div class="radio-row">
                 <label><input type="radio" name="disappear" value="0" checked> Off</label>
                 <label><input type="radio" name="disappear" value="30"> 30 seconds</label>
@@ -248,7 +241,7 @@
             <legend>App</legend>
             <label class="toggle-row"><input type="checkbox" data-app-setting="closeToTray"> <span>Keep running in the tray when closed <small>(your chat stays open)</small></span></label>
             <label class="toggle-row"><input type="checkbox" data-app-setting="launchAtStartup"> <span>Start with Windows <small>(waits quietly in the tray)</small></span></label>
-            <label class="toggle-row"><input type="checkbox" data-app-setting="blockScreenshots"> <span>Block screenshots and screen sharing of this window</span></label>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="blockScreenshots"> <span>Block screenshots and screen sharing of this window <small>(programs that read the screen's text can still see it)</small></span></label>
             <label class="toggle-row"><input type="checkbox" data-app-setting="privacyBlur"> <span>Blur the chat when you switch to another window</span></label>
         </fieldset>
         <fieldset class="setting-group">
@@ -268,6 +261,7 @@
         <fieldset class="setting-group">
             <legend>Privacy</legend>
             <label class="toggle-row"><input type="checkbox" id="readReceiptsToggle"> <span>Send and see read receipts <small>(only works when you both turn it on)</small></span></label>
+            <label class="toggle-row"><input type="checkbox" id="autoLoadMediaToggle"> <span>Show their images and voice messages right away <small>(otherwise you tap to load each one)</small></span></label>
         </fieldset>
         <button class="primary-button" type="button" data-close>Done</button>
     </dialog>
@@ -280,7 +274,7 @@
             <li><strong>Encrypted end to end.</strong> Messages and files are encrypted with keys made fresh for this chat (ECDH P-256 and AES-256-GCM). Calls use WebRTC’s built-in encryption, and the code check covers them too. Nothing is stored, and closing the tab ends the chat.</li>
             <li><strong>Check the code.</strong> If someone else got hold of the link, comparing the 6-digit code over a call or in person shows whether anyone is in the middle.</li>
             <li><strong>One-time links.</strong> A link works for one person and expires if nobody uses it.</li>
-            <li><strong>Good to know.</strong> Without Hide my IP, the other person can see your IP address. And as with any website, you’re trusting this server to send you the real app.</li>
+            re’re trusting this server to send you the real app.</li>
         </ul>
         <p class="fine-print"><a id="aboutLink" href="/about#security" target="_blank" rel="noopener">Read the full security details</a> · <a id="downloadLink" href="/download" target="_blank" rel="noopener">Get the desktop app</a></p>
         <button class="primary-button" type="button" data-close>Got it</button>
@@ -293,7 +287,7 @@
             <legend>App</legend>
             <label class="toggle-row"><input type="checkbox" data-app-setting="closeToTray"> <span>Keep running in the tray when closed <small>(your chat stays open)</small></span></label>
             <label class="toggle-row"><input type="checkbox" data-app-setting="launchAtStartup"> <span>Start with Windows <small>(waits quietly in the tray)</small></span></label>
-            <label class="toggle-row"><input type="checkbox" data-app-setting="blockScreenshots"> <span>Block screenshots and screen sharing of this window</span></label>
+            <label class="toggle-row"><input type="checkbox" data-app-setting="blockScreenshots"> <span>Block screenshots and screen sharing of this window <small>(programs that read the screen's text can still see it)</small></span></label>
             <label class="toggle-row"><input type="checkbox" data-app-setting="privacyBlur"> <span>Blur the chat when you switch to another window</span></label>
             <label class="toggle-row"><input type="checkbox" id="welcomeNotify"> <span>Show a notification for new messages <small>(it never includes the message)</small></span></label>
         </fieldset>
@@ -306,6 +300,20 @@
         <div class="button-row">
             <button id="appConfirmButton" class="primary-button danger" type="button"></button>
             <button class="secondary-button" type="button" data-close>Cancel</button>
+        </div>
+    </dialog>
+
+    <dialog id="choiceDialog" aria-labelledby="choiceTitle">
+        <h2 id="choiceTitle"></h2>
+        <p id="choiceText"></p>
+        <p id="choiceDetail" class="url-display" hidden></p>
+        <label id="choiceRememberRow" class="toggle-row" hidden>
+            <input type="checkbox" id="choiceRemember">
+            <span>Don’t show this again</span>
+        </label>
+        <div class="button-row">
+            <button id="choiceConfirm" class="primary-button" type="button"></button>
+            <button id="choiceCancel" class="secondary-button" type="button"></button>
         </div>
     </dialog>
 

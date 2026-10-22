@@ -80,7 +80,7 @@
                     </li>
                     <li>
                         <h3>Your devices connect directly</h3>
-                        <p>A peer-to-peer WebRTC connection is made. With <strong>Hide my IP</strong> on, it goes through our relay instead, which only ever sees encrypted data.</p>
+                        <p>A peer-to-peer WebRTC connection is made. On a phone, where mobile data usually blocks direct connections, you can let it fall back to our relay, which only ever sees encrypted data. The app asks you first.</p>
                     </li>
                     <li>
                         <h3>A fresh key exchange locks the chat</h3>
@@ -110,7 +110,9 @@
                         <tr><th scope="row">Verification code</th><td>Six digits derived from the same keys and context. Matching codes prove the two of you are connected to each other directly.</td></tr>
                         <tr><th scope="row">Calls</th><td>Audio, video and screen sharing use WebRTC's DTLS-SRTP encryption. Because the certificate fingerprints feed into the code, the code check covers calls too. Call setup travels over the encrypted chat, never through the server.</td></tr>
                         <tr><th scope="row">Files and photos</th><td>Sent in encrypted chunks, up to 100 MB per file. Photos are redrawn before sending, which removes location and camera details, unless you choose to send the original.</td></tr>
+                        <tr><th scope="row">Message sizes</th><td>Short messages, typing signals and receipts are padded to a few fixed sizes, so someone watching the encrypted traffic can't tell them apart by length.</td></tr>
                         <tr><th scope="row">Invite links</th><td>A link works for one person only. An unused link expires after 30 minutes.</td></tr>
+                        <tr><th scope="row">The server connection</th><td>Your device talks to our server only to set up the chat. A minute after the other person joins, that connection closes, so the server doesn't learn when the chat ends, and nothing more can be passed into the connection through it.</td></tr>
                         <tr><th scope="row">Linux app</th><td>Linux's web engine has no WebRTC, so the Linux app makes the connection itself, with the open-source webrtc-rs library inside the app. Everything above runs unchanged on top of it, and the code covers its certificate fingerprints just the same. Calls aren't in the Linux app yet.</td></tr>
                     </table>
                 </div>
@@ -133,9 +135,9 @@
                         <h3><span class="tag warn">Briefly</span> What the server handles</h3>
                         <ul>
                             <li>Your IP address and the other person's, while connecting</li>
-                            <li>The room name and when a chat starts</li>
+                            <li>The room name and when a chat starts (not when it ends)</li>
                             <li>Connection setup data: network addresses and certificate fingerprints</li>
-                            <li>With Hide my IP, the relay sees both IP addresses and how much encrypted data flows, but never what's in it</li>
+                            <li>On a phone, if you let it use the relay: both IP addresses and how much encrypted data flows, but never what's in it</li>
                         </ul>
                     </div>
                 </div>
@@ -173,7 +175,31 @@
                     </div>
                     <div class="card">
                         <h3>The other person can see your IP</h3>
-                        <p>That's how direct connections work. Turn on Hide my IP to send everything through our relay instead.</p>
+                        <p>That's how direct connections work, and it's true through the relay too. On a shared network they can also see your device's local address (like 192.168.x.x).</p>
+                    </div>
+                    <div class="card">
+                        <h3>Links take you out of the chat</h3>
+                        <p>Opening a link someone sends opens it in your browser, and that site sees your IP address. The app asks before opening one and shows where it goes.</p>
+                    </div>
+                    <div class="card">
+                        <h3>What they've seen, they can keep</h3>
+                        <p>Disappearing messages and delete for everyone clear their screen too, but only if their app plays along. Anyone can take a photo of a screen.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Files keep their details</h3>
+                        <p>Photos are cleaned before sending, but other files (and photos sent as originals) arrive as they are, including the file name and things like the author of a document.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Your browser may remember the link</h3>
+                        <p>The page clears the link from the address bar, but your browser's history may still hold it. It's useless once used, but a private window avoids it entirely.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Screenshot blocking has limits</h3>
+                        <p>On Windows it stops screenshots and screen sharing of the window, not programs that read the screen's text through accessibility features. Linux has no such protection.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Installers are signed for updates only</h3>
+                        <p>Updates are checked against our signing key, but the Windows installer isn't Authenticode-signed yet, so Windows may warn the first time. Download it only from ecdh.chat.</p>
                     </div>
                     <div class="card">
                         <h3>The website trusts our server</h3>

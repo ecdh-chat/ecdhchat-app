@@ -5,7 +5,7 @@ import { el, icon } from './dom.js';
 import { EMOJI_CATEGORIES } from './emoji.js';
 import { emojiOnly, parse } from './format.js';
 import { REACTIONS } from './messages.js';
-import { appInvoke, inBackground, isApp, onForeground, serverOrigin } from './platform.js';
+import { appInvoke, appOs, inBackground, isApp, onForeground, serverOrigin } from './platform.js';
 import { TransferMeter, timeLeft } from './transfer.js';
 import { addImage, forgetImages, initViewer, resetViewer } from './viewer.js';
 import { formatDuration, voicePlayer } from './voice-player.js';
@@ -28,6 +28,7 @@ const els = {
     attachments: $('attachments'),
     attachmentList: $('attachmentList'),
     originalRow: $('originalRow'),
+    fileDetailsNote: $('fileDetailsNote'),
     originalToggle: $('originalToggle'),
     composer: $('composer'),
     fileInput: $('fileInput'),
@@ -46,6 +47,7 @@ const els = {
     emojiTabs: $('emojiTabs'),
     emojiGrid: $('emojiGrid'),
     toneSelect: $('toneSelect'),
+    autoLoadMediaToggle: $('autoLoadMediaToggle'),
     readReceiptsToggle: $('readReceiptsToggle'),
     menuEdit: $('menuEdit'),
     menuEditShortcut: $('menuEditShortcut'),
@@ -84,14 +86,20 @@ const els = {
     infoDialog: $('infoDialog'),
     confirmEndDialog: $('confirmEndDialog'),
     confirmEndButton: $('confirmEndButton'),
+    choiceDialog: $('choiceDialog'),
+    choiceTitle: $('choiceTitle'),
+    choiceText: $('choiceText'),
+    choiceDetail: $('choiceDetail'),
+    choiceRememberRow: $('choiceRememberRow'),
+    choiceRemember: $('choiceRemember'),
+    choiceConfirm: $('choiceConfirm'),
+    choiceCancel: $('choiceCancel'),
     messageMenu: $('messageMenu'),
     menuReactions: $('menuReactions'),
     menuReply: $('menuReply'),
     menuCopy: $('menuCopy'),
     menuDelete: $('menuDelete'),
 };
-const relayRows = document.querySelectorAll('.relay-option');
-const relayToggles = document.querySelectorAll('.relay-toggle');
 const overlays = [els.inviteScreen, els.joinScreen, els.endedScreen];
 
 const ENDED = {
@@ -103,7 +111,7 @@ const ENDED = {
     expired: ['Invite expired', 'Nobody joined in time. Start a new chat to get a fresh link.'],
     unavailable: ['This link can’t be used', 'It was already used, it expired, or the person who made it closed their tab. Ask them for a new link.'],
     'invalid-link': ['This link is incomplete', 'Part of the invite link is missing. Ask for the full link and open it again.'],
-    'connect-failed': ['Couldn’t connect', 'A direct connection couldn’t be made. A firewall or a strict network may be blocking it. Try another network, or turn on Hide my IP if it’s offered.'],
+    'connect-failed': ['Couldn’t connect', 'A direct connection couldn’t be made. A firewall or a strict network may be blocking it. Try another network, like the same Wi-Fi for both of you.'],
     'handshake-failed': ['Couldn’t secure the chat', 'The secure connection couldn’t be set up. The link may be wrong, or something is interfering. Start a new chat.'],
     tampered: ['Chat closed for safety', 'Something unexpected arrived over the secure connection, so the chat was closed. Start a new chat.'],
     'network-lost': ['Connection lost', 'The connection dropped and couldn’t recover.'],
@@ -143,7 +151,6 @@ let staged = [];
 let composerEnabled = false;
 let inviteLink = '';
 let copiedTimer = null;
-let relayAvailable = false;
 let dragDepth = 0;
 let unread = 0;
 let menuTarget = null;
@@ -246,6 +253,10 @@ export function init(callbacks) {
         els.verifyDialog.close();
         handlers.onVerify(false);
     });
+    els.choiceConfirm.addEventListener('click', () => settleChoice(true));
+    els.choiceCancel.addEventListener('click', () => settleChoice(false));
+    els.choiceDialog.addEventListener('close', () => settleChoice(false));
+
     els.joinButton.addEventListener('click', () => handlers.onJoin());
     els.newRoomButton.addEventListener('click', () => handlers.onNewRoom());
     els.newChatButton.addEventListener('click', () => handlers.onNewChat());
@@ -283,19 +294,6 @@ export function init(callbacks) {
     initMessageMenu();
     initSettings();
     initViewer();
-
-    const hideIp = savedHideIp();
-    for (const toggle of relayToggles) {
-        toggle.checked = hideIp;
-        toggle.addEventListener('change', () => {
-            for (const other of relayToggles) other.checked = toggle.checked;
-            try {
-                localStorage.setItem('hideIp', toggle.checked ? '1' : '0');
-            } catch {
-                // Not saved; the choice still applies to this chat.
-            }
-        });
-    }
 
     onForeground(() => {
         unread = 0;
@@ -343,9 +341,7 @@ export function setChatControls({ end, call }) {
     els.videoCallButton.hidden = !call;
 }
 
-export function showInvitePending(available) {
-    relayAvailable = available;
-    showRelayOption();
+export function showInvitePending() {
     els.inviteLink.textContent = 'Creating a link…';
     show(els.inviteScreen);
 }
@@ -357,9 +353,8 @@ export function showInvite(link) {
     els.qrCanvas.hidden = false;
 }
 
-export function showJoin(available, appLink) {
-    relayAvailable = available;
-    showRelayOption();
+export function showJoin(appLink) {
+    els.ipNotice.textContent = 'The other person will be able to see your IP address.';
     els.openInApp.hidden = isApp;
     els.openInAppLink.href = appLink;
     show(els.joinScreen);
@@ -368,10 +363,6 @@ export function showJoin(available, appLink) {
 
 export function hideOverlays() {
     for (const overlay of overlays) overlay.hidden = true;
-}
-
-export function relayOnly() {
-    return relayAvailable && relayToggles[0].checked;
 }
 
 export function openChat() {
@@ -451,6 +442,16 @@ export function newestInView() {
     return pinned && !inBackground();
 }
 
+// Images and voice messages from the other person are decoded only when tapped, unless this is on:
+// a flaw in an image or audio decoder is the classic way in for a file someone sends you.
+function autoLoadMedia() {
+    try {
+        return localStorage.getItem('autoLoadMedia') === '1';
+    } catch {
+        return false;
+    }
+}
+
 export function readReceiptsPreference() {
     try {
         return localStorage.getItem('readReceipts') === '1';
@@ -520,9 +521,15 @@ export function completeFile(id, { url, kind, name, size }) {
     const file = files.get(id);
     if (!file) return;
     finishFile(file);
-    file.body.replaceChildren(fileBody(kind, url, name, size));
-    file.card.classList.toggle('is-image', kind === 'image' && Boolean(url));
     rows.get(id)?.urls.push(url);
+    const show = () => {
+        file.body.replaceChildren(fileBody(kind, url, name, size));
+        file.card.classList.toggle('is-image', kind === 'image' && Boolean(url));
+    };
+    if (file.mine || !url || (kind !== 'image' && kind !== 'audio') || autoLoadMedia()) return show();
+    const label = kind === 'image' ? `Show image (${formatBytes(size)})` : 'Load voice message';
+    file.body.replaceChildren(el('button', { type: 'button', className: 'secondary-button tap-to-load', textContent: label }));
+    file.body.firstChild.addEventListener('click', show);
 }
 
 export function setFileState(id, state) {
@@ -748,6 +755,7 @@ function renderStaged() {
     }));
     els.attachments.hidden = staged.length === 0;
     els.originalRow.hidden = !staged.some((item) => item.url);
+    els.fileDetailsNote.hidden = !staged.some((item) => !item.url);
 }
 
 function clearStaged() {
@@ -838,7 +846,7 @@ function initMessageMenu() {
     els.menuEdit.addEventListener('click', () => menuAction(() => handlers.onStartEdit(menuTarget)));
     els.menuCopy.addEventListener('click', () => menuAction(() => {
         const text = rows.get(menuTarget)?.text;
-        if (text) navigator.clipboard.writeText(text).catch(() => {});
+        if (text) copyText(text).catch(() => {});
     }));
 }
 
@@ -891,6 +899,14 @@ function initSettings() {
         alerts.setTone(els.toneSelect.value);
         alerts.preview();
     });
+    els.autoLoadMediaToggle.checked = autoLoadMedia();
+    els.autoLoadMediaToggle.addEventListener('change', () => {
+        try {
+            localStorage.setItem('autoLoadMedia', els.autoLoadMediaToggle.checked ? '1' : '0');
+        } catch {
+            // Not saved; the choice still applies to this chat.
+        }
+    });
     els.readReceiptsToggle.checked = readReceiptsPreference();
     els.readReceiptsToggle.addEventListener('change', () => {
         try {
@@ -932,7 +948,7 @@ function formatted(text) {
             case 'strike': return el('s', {}, segment.children.map(build));
             case 'code': return el('code', { textContent: segment.text });
             case 'pre': return el('pre', {}, [el('code', { textContent: segment.text })]);
-            case 'link': return el('a', { href: segment.href, target: '_blank', rel: 'noopener noreferrer', textContent: segment.text });
+            case 'link': return messageLink(segment);
             default: return segment.text;
         }
     });
@@ -1041,6 +1057,55 @@ function fileLabel(name, size, url = null) {
     return label;
 }
 
+// A link opens outside the chat, where the site sees this person's IP address, so it's never
+// followed without asking. The host is shown the way the browser will use it (punycode), so a
+// lookalike address can't hide behind similar-looking letters.
+function messageLink({ href, text }) {
+    const link = el('a', { href, target: '_blank', rel: 'noopener noreferrer', textContent: text });
+    const confirmOpen = async (event) => {
+        if (event.type === 'auxclick' && event.button !== 1) return;
+        event.preventDefault();
+        const { confirmed } = await choose({
+            title: 'Open this link?',
+            text: 'It opens in your browser, outside the chat. The site will see your IP address. Only open links you trust.',
+            detail: new URL(href).host,
+            confirm: 'Open link',
+            cancel: 'Stay in chat',
+        });
+        if (confirmed) window.open(href, '_blank', 'noopener,noreferrer');
+    };
+    link.addEventListener('click', confirmOpen);
+    link.addEventListener('auxclick', confirmOpen);
+    return link;
+}
+
+let choiceAnswer = null;
+
+// Asks a question with two answers and resolves to { confirmed, remember }. Closing the dialog
+// counts as the second answer. remember adds a "Don't show this again" box.
+export function choose({ title, text, detail = '', confirm, cancel, remember = false }) {
+    settleChoice(false);
+    els.choiceTitle.textContent = title;
+    els.choiceText.textContent = text;
+    els.choiceDetail.textContent = detail;
+    els.choiceDetail.hidden = !detail;
+    els.choiceRemember.checked = false;
+    els.choiceRememberRow.hidden = !remember;
+    els.choiceConfirm.textContent = confirm;
+    els.choiceCancel.textContent = cancel;
+    open(els.choiceDialog);
+    return new Promise((resolve) => {
+        choiceAnswer = resolve;
+    });
+}
+
+function settleChoice(confirmed) {
+    const resolve = choiceAnswer;
+    choiceAnswer = null;
+    if (els.choiceDialog.open) els.choiceDialog.close();
+    resolve?.({ confirmed, remember: els.choiceRemember.checked });
+}
+
 function linkButton(text, onClick) {
     const button = el('button', { type: 'button', className: 'link-button', textContent: text });
     button.addEventListener('click', onClick);
@@ -1058,13 +1123,6 @@ function formatCode(sas) {
     return `${sas.slice(0, 3)} ${sas.slice(3)}`;
 }
 
-function showRelayOption() {
-    for (const row of relayRows) row.hidden = !relayAvailable;
-    els.ipNotice.textContent = relayAvailable
-        ? 'Unless you turn on Hide my IP, the other person will be able to see your IP address.'
-        : 'The other person will be able to see your IP address.';
-}
-
 function show(overlay) {
     for (const other of overlays) other.hidden = other !== overlay;
 }
@@ -1076,7 +1134,7 @@ function open(dialog) {
 async function copyLink() {
     if (!inviteLink) return;
     try {
-        await navigator.clipboard.writeText(inviteLink);
+        await copyText(inviteLink);
     } catch {
         // No clipboard access: select the link so it can be copied by hand.
         const range = document.createRange();
@@ -1093,6 +1151,20 @@ async function copyLink() {
         els.inviteLink.textContent = inviteLink;
         els.inviteLink.classList.remove('copied');
     }, 1500);
+}
+
+// The Windows app copies through its Rust side, which keeps the text out of clipboard history and
+// the cloud clipboard (src-tauri/src/clipboard.rs).
+async function copyText(text) {
+    if (appOs === 'windows') {
+        try {
+            await appInvoke('copy_text', { text });
+            return;
+        } catch {
+            // Falls back to the browser's clipboard.
+        }
+    }
+    await navigator.clipboard.writeText(text);
 }
 
 function drawQr(canvas, text) {
@@ -1165,13 +1237,6 @@ function hasFiles(event) {
     return Boolean(event.dataTransfer?.types.includes('Files'));
 }
 
-function savedHideIp() {
-    try {
-        return localStorage.getItem('hideIp') === '1';
-    } catch {
-        return false;
-    }
-}
 
 // Whether a message continues the previous one's group: same person, sent soon after.
 function continuesGroup(previous, row) {

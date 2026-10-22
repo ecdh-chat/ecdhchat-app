@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { inviteFragment, resolveServerOrigin, socketUrl } from '../public/js/platform.js';
+import { inviteFragment, isMobileBrowser, resolveServerOrigin, socketUrl } from '../public/js/platform.js';
 
 const ROOM = '0b7f3c2e-4d5a-4b6c-8d7e-9f0a1b2c3d4e';
 const SECRET = 'AAECAwQFBgcICQoLDA0ODw';
@@ -32,5 +32,23 @@ describe('platform', () => {
         assert.equal(inviteFragment(`https://ecdh.chat/#${ROOM}.${SECRET}x`, 'https://ecdh.chat'), null);
         assert.equal(inviteFragment(`ecdhchat://join${fragment}`, 'https://ecdh.chat'), null);
         assert.equal(inviteFragment('hello', 'https://ecdh.chat'), null);
+    });
+
+    test('offers the relay to phones and tablets only', () => {
+        const phones = [
+            'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+        ];
+        for (const userAgent of phones) assert.equal(isMobileBrowser({ userAgent, maxTouchPoints: 5 }), true, userAgent);
+        assert.equal(isMobileBrowser({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15', maxTouchPoints: 5 }), true);
+        assert.equal(isMobileBrowser({ userAgent: 'x', userAgentData: { mobile: true } }), true);
+
+        const computers = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
+            'Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0',
+        ];
+        for (const userAgent of computers) assert.equal(isMobileBrowser({ userAgent, maxTouchPoints: 0 }), false, userAgent);
+        assert.equal(isMobileBrowser(null), false);
     });
 });

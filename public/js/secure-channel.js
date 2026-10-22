@@ -156,6 +156,9 @@ export class SecureChannel {
         ]));
 
         const ikm = await subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey', 'deriveBits']);
+        // The raw shared secret isn't needed once it's a non-extractable key. JavaScript can't
+        // promise memory is wiped, but this copy at least doesn't linger.
+        new Uint8Array(shared).fill(0);
         const hkdf = (label) => ({ name: 'HKDF', hash: 'SHA-256', salt: this.secret, info: concat(encoder.encode(label), this.transcript) });
         const aes = { name: 'AES-GCM', length: 256 };
         this.sendKey = await subtle.deriveKey(hkdf(isCreator ? 'creator to joiner' : 'joiner to creator'), ikm, aes, false, ['encrypt']);

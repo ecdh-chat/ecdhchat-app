@@ -18,11 +18,12 @@ export const MessageType = Object.freeze({
     EDIT: 14,
     PREFS: 15,
     SEEN: 16,
+    PADDED: 17,
 });
 
 // What each side can do beyond 3.1. They're announced inside SETTINGS, whose extra fields older
 // apps ignore, and a feature is only used when both sides announce it.
-export const FEATURES = ['edit', 'seen', 'screen'];
+export const FEATURES = ['edit', 'seen', 'screen', 'pad'];
 // Announced only by an app that can't take calls (the Linux app, for now), so the other side
 // hides its call buttons. It's an opt-out because older apps announce nothing at all.
 export const NO_CALLS = 'no-calls';
@@ -53,6 +54,23 @@ export function encode(type, body) {
     return bytes;
 }
 
+// Short messages are padded to a few fixed sizes, so their length doesn't show what they are (a
+// typing signal, a receipt, a short or long text) to anyone watching the encrypted traffic.
+// Longer ones (descriptions, file chunks) are left as they are: frames have a size limit, and a
+// file's size is no secret from the network anyway. Only sent once the other side announces 'pad'.
+const PAD_BUCKETS = [256, 1024, 4096];
+const PAD_HEADER = 5;
+
+export function pad(bytes) {
+    const size = PAD_BUCKETS.find((bucket) => bucket >= PAD_HEADER + bytes.length);
+    if (!size || bytes[0] === MessageType.PADDED) return bytes;
+    const padded = new Uint8Array(size);
+    padded[0] = MessageType.PADDED;
+    new DataView(padded.buffer).setUint32(1, bytes.length);
+    padded.set(bytes, PAD_HEADER);
+    return padded;
+}
+
 export function encodeTyping(typing) {
     return Uint8Array.of(MessageType.TYPING, typing ? 1 : 0);
 }
@@ -75,6 +93,14 @@ export function encodeChunk(id, index, data) {
 // have sent it.
 export function decode(bytes) {
     switch (bytes[0]) {
+        case MessageType.PADDED: {
+            check(bytes.length >= PAD_HEADER);
+            const length = new DataView(bytes.buffer, bytes.byteOffset, bytes.length).getUint32(1);
+            check(length >= 1 && length <= bytes.length - PAD_HEADER);
+            const inner = bytes.subarray(PAD_HEADER, PAD_HEADER + length);
+            check(inner[0] !== MessageType.PADDED);
+            return decode(inner);
+        }
         case MessageType.TEXT: {
             const { id, text, replyTo, expiresIn } = json(bytes);
             check(isId(id) && isText(text, 1, MAX_TEXT_LENGTH) && isOptionalId(replyTo) && isOptionalExpiry(expiresIn));

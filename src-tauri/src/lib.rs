@@ -1,3 +1,4 @@
+mod clipboard;
 #[cfg(target_os = "linux")]
 mod rtc;
 mod settings;
@@ -56,6 +57,7 @@ pub fn run() {
             tray::set_unread,
             updates::get_update,
             updates::install_update,
+            clipboard::copy_text,
             window_action,
             #[cfg(target_os = "linux")]
             rtc::rtc_create,

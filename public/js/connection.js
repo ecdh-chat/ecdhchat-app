@@ -1,5 +1,5 @@
 import { CONNECT_TIMEOUT_MS, HANDSHAKE_TIMEOUT_MS } from './config.js';
-import { MessageType, ProtocolError, decode, encode } from './messages.js';
+import { MessageType, ProtocolError, decode, encode, pad } from './messages.js';
 import { Peer, fingerprint } from './peer.js';
 import { SecureChannel } from './secure-channel.js';
 import { IncomingTransfers } from './transfer.js';
@@ -11,7 +11,7 @@ const OWN_GOODBYES = { ended: 'you-ended', mismatch: 'mismatch' };
 //
 // state: connecting → securing → open → closed
 export class Connection {
-    constructor({ role, roomId, secret, iceServers, relayOnly, sendSignal, onOpen, onMessage, onClose, onStateChange, onTrack }) {
+    constructor({ role, roomId, secret, iceServers, sendSignal, onOpen, onMessage, onClose, onStateChange, onTrack }) {
         this.role = role;
         this.roomId = roomId;
         this.secret = secret;
@@ -19,6 +19,8 @@ export class Connection {
         this.sas = '';
         this.verifiedByMe = false;
         this.verifiedByPeer = false;
+        // Turned on once the other side announces it understands padded messages ('pad').
+        this.padding = false;
         this.incoming = new IncomingTransfers();
         this.handlers = { onOpen, onMessage, onClose, onStateChange };
         this.channel = null;
@@ -30,7 +32,6 @@ export class Connection {
         this.peer = new Peer({
             role,
             iceServers,
-            relayOnly,
             onSignal: sendSignal,
             onOpen: () => this.startHandshake(),
             onFrame: (frame) => this.receiveFrame(frame),
@@ -50,7 +51,7 @@ export class Connection {
     send(bytes) {
         return this.queue(async () => {
             if (this.state !== 'open') return;
-            await this.peer.send(await this.channel.seal(bytes));
+            await this.peer.send(await this.channel.seal(this.padding ? pad(bytes) : bytes));
         });
     }
 
