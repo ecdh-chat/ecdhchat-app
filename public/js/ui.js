@@ -308,7 +308,7 @@ export function init(callbacks) {
     // itself as a download.
     if (isApp) {
         const about = document.getElementById('aboutLink');
-        about.href = `${serverOrigin()}/about#security`;
+        about.href = `${serverOrigin()}/about`;
         document.getElementById('downloadLink').previousSibling.remove();
         document.getElementById('downloadLink').remove();
     }

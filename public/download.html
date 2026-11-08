@@ -10,6 +10,8 @@
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="preload" href="/assets/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/inter-tight.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/theme.css">
     <link rel="stylesheet" href="/site.css">
     <script src="/js/theme-boot.js"></script>
@@ -18,144 +20,127 @@
 <body>
     <header class="site-header">
         <div class="wrap">
-            <a class="brand" href="/about"><img src="/favicon.svg" alt="" width="28" height="28">ecdh.chat</a>
+            <a class="brand" href="/about"><svg class="logo" width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><rect class="tile" width="32" height="32" rx="8"/><path class="mark" d="M8 11a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-6l-5 4v-4.2A3 3 0 0 1 8 18z"/><circle class="tile" cx="12.5" cy="14.5" r="1.5"/><circle class="tile" cx="16" cy="14.5" r="1.5"/><circle class="tile" cx="19.5" cy="14.5" r="1.5"/></svg>ecdh.chat</a>
             <nav class="site-nav" aria-label="Site">
                 <a href="/about">About</a>
-                <a href="/faq">FAQ</a>
                 <a href="/download" aria-current="page">Download</a>
+                <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch theme">
+                    <svg class="icon-light" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM7.05 18.01l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41z"/></svg>
+                    <svg class="icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+                </button>
+                <a class="button primary" href="/">Open chat</a>
             </nav>
-            <button id="themeToggle" class="icon-button theme-toggle" type="button" data-theme="system" aria-label="Theme" title="Theme">
-                <svg class="icon-system" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18V4a8 8 0 0 1 0 16z"/></svg>
-                <svg class="icon-light" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM7.05 18.01l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41z"/></svg>
-                <svg class="icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
-            </button>
-            <a class="button primary" href="/">Open chat</a>
         </div>
     </header>
 
     <main>
-        <div class="wrap">
-            <div class="hero">
-                <p class="eyebrow">Download</p>
+        <section class="dl-hero">
+            <div class="wrap">
+                <p class="kicker" id="release">Version 4.2.0 · 7 November 2026</p>
                 <h1>ecdh.chat for your computer</h1>
-                <p class="lede">The same private chat as a small, fast desktop app for Windows and Linux. It carries its own code and keeps your chat open in the tray.</p>
-
-                <!-- The visitor's own system comes first (js/site.js). -->
-                <div id="downloads" class="downloads">
-                    <div class="download-card" data-os="windows">
-                        <img src="/icon-512.png" alt="" width="88" height="88">
-                        <div>
-                            <h2>Windows 10 and 11</h2>
-                            <p class="download-meta">64-bit · under 2 MB · free</p>
-                            <a class="button primary large" href="/downloads/windows/ecdh.chat-setup.exe" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Download for Windows</a>
-                            <p class="checksum" data-installer="windows" hidden>
-                                <span data-version></span><span aria-hidden="true">·</span><span data-size></span><span aria-hidden="true">·</span><span>SHA-256</span><code class="mono" data-hash></code>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="download-card" data-os="linux">
-                        <img src="/icon-512.png" alt="" width="88" height="88">
-                        <div>
-                            <h2>Linux</h2>
-                            <p class="download-meta">64-bit · Ubuntu 22.04, Debian 12 and newer, or any distribution with the AppImage · free</p>
-                            <div class="actions">
-                                <a class="button primary large" href="/downloads/linux/ecdh.chat_amd64.deb" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>.deb for Ubuntu and Debian</a>
-                                <a class="button secondary large" href="/downloads/linux/ecdh.chat-x86_64.AppImage" download>AppImage</a>
-                            </div>
-                            <p class="checksum" data-installer="deb" hidden>
-                                <span>.deb</span><span aria-hidden="true">·</span><span data-version></span><span aria-hidden="true">·</span><span data-size></span><span aria-hidden="true">·</span><span>SHA-256</span><code class="mono" data-hash></code>
-                            </p>
-                            <p class="checksum" data-installer="appimage" hidden>
-                                <span>AppImage</span><span aria-hidden="true">·</span><span data-version></span><span aria-hidden="true">·</span><span data-size></span><span aria-hidden="true">·</span><span>SHA-256</span><code class="mono" data-hash></code>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <p class="lead">The same private chat as a small, fast desktop app for Windows and Linux. It carries its own code and keeps your chat open in the tray.</p>
             </div>
+        </section>
 
-            <section aria-labelledby="install">
-                <h2 id="install">Installing</h2>
-                <h3>Windows</h3>
-                <p class="section-intro">Run the installer and choose whether to install just for you or for everyone on the computer, and where it goes. Uninstall any time from Windows Settings.</p>
-                <div class="note" role="note">
-                    <div>
-                        <p><strong>Windows may show a warning.</strong> The app isn't code-signed yet, so SmartScreen may say it doesn't recognise it. Choose <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
-                        <p>To make sure you have the real file, compare its fingerprint with the SHA-256 shown above. In PowerShell, run <code>Get-FileHash $HOME\Downloads\ecdh.chat-setup.exe</code></p>
-                    </div>
-                </div>
-
-                <h3>Linux</h3>
-                <p class="section-intro">On Ubuntu, Debian and Mint, pick the .deb. It uses your system's web engine, so your regular security updates keep that part up to date. Open it with your software installer, or run <code>sudo apt install ./ecdh.chat_amd64.deb</code>. When there's an update, the app asks for your password to install it.</p>
-                <p class="section-intro">The AppImage brings everything it needs, runs on almost any distribution and updates itself. Make it executable, then start it: <code>chmod +x ecdh.chat-x86_64.AppImage</code> and <code>./ecdh.chat-x86_64.AppImage</code>. Ubuntu 22.04 and newer need FUSE 2 for AppImages: <code>sudo apt install libfuse2t64</code>, or <code>libfuse2</code> on 22.04.</p>
-                <div class="note" role="note">
-                    <div>
-                        <p><strong>Calls aren't in the Linux app yet.</strong> Chats, files and voice messages work as everywhere else; for calls, open ecdh.chat in a browser. Linux also can't hide a window from screenshots, so that setting is Windows-only.</p>
-                        <p>To make sure you have the real file, compare its fingerprint with the SHA-256 shown above, for example with <code>sha256sum ecdh.chat_amd64.deb</code></p>
-                    </div>
-                </div>
-            </section>
-
-            <section aria-labelledby="source">
-                <h2 id="source">Build it yourself</h2>
-                <p class="section-intro">Rather not trust an installer from us? The app's full source is public under the GPL-3.0 license. Read it, then build your own copy with two commands.</p>
-                <div class="actions">
-                    <a class="button secondary large" href="https://github.com/ecdh-chat/ecdhchat-app" rel="noopener">View the source on GitHub</a>
-                </div>
-            </section>
-
-            <section aria-labelledby="extras">
-                <h2 id="extras">What the app adds</h2>
-                <div class="grid">
-                    <div class="card">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg></span>
-                        <h3>Code that ships with the app</h3>
-                        <p>The website gets its code from our server every time. The app brings its own, so what runs on your computer only changes when you update.</p>
-                    </div>
-                    <div class="card">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></span>
-                        <h3>Privacy blur and screenshot blocking</h3>
-                        <p>Blur the chat whenever you switch to something else. On Windows it can also hide the window from screenshots, recordings and screen sharing.</p>
-                    </div>
-                    <div class="card">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 12h-4a3 3 0 0 1-6 0H5V5h14v10z"/></svg></span>
-                        <h3>Stays with you</h3>
-                        <p>Closing the window keeps your chat open in the tray, with quiet alerts that never show what was said. It can start when you log in, too.</p>
-                    </div>
-                    <div class="card">
-                        <span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 4.42-3.58 8-8 8s-8-3.58-8-8c0-4.08 3.05-7.44 7-7.93V2.05C5.94 2.55 2 6.81 2 12c0 5.52 4.47 10 9.99 10S22 17.52 22 12c0-5.19-3.94-9.45-9-9.95zM12 7l-5 5h4v5h2v-5h4l-5-5z"/></svg></span>
-                        <h3>Tiny and light</h3>
-                        <p>Under 2 MB on Windows and about 4 MB as a .deb, because it uses the web engine already on your system instead of bundling a whole browser.</p>
-                    </div>
-                </div>
-            </section>
-
-            <section aria-labelledby="platforms">
-                <h2 id="platforms">Other devices</h2>
-                <p class="section-intro">Apps for more platforms are on the way. Until then, ecdh.chat works in any up-to-date browser, on any device.</p>
-                <ul class="platforms">
-                    <li><strong>Windows</strong> · available</li>
-                    <li><strong>Linux</strong> · available</li>
-                    <li><strong>Web</strong> · <a href="/">open now</a></li>
-                    <li><strong>macOS</strong> · coming later</li>
-                    <li><strong>Android</strong> · coming later</li>
-                    <li><strong>iOS</strong> · coming later</li>
+        <section class="dl-section" aria-label="Installers">
+            <div class="wrap">
+                <!-- The details come from /downloads/latest.json, and the visitor's own system goes first (js/site.js). -->
+                <ul id="downloads" class="releases">
+                    <li class="release" data-os="windows" data-installer="windows">
+                        <div class="release-head">
+                            <div>
+                                <h2 class="titled"><span class="tag">[WIN]</span><span class="title">Windows</span></h2>
+                                <p class="muted">10 and 11 · 64-bit<span class="release-data"> · <span data-version>–</span> · <span data-size>–</span></span></p>
+                            </div>
+                            <a class="button primary" href="/downloads/windows/ecdh.chat-setup.exe" download>Download for Windows</a>
+                        </div>
+                        <div class="release-how">
+                            <p class="muted">Run the installer. The app isn’t code-signed yet, so SmartScreen may warn you: choose More info, then Run anyway.</p>
+                            <p class="hash" hidden>SHA-256 <code data-hash></code></p>
+                            <div class="command"><code><span>Get-FileHash $HOME\Downloads\ecdh.chat-setup.exe</span></code></div>
+                        </div>
+                    </li>
+                    <li class="release" data-os="linux" data-installer="deb">
+                        <div class="release-head">
+                            <div>
+                                <h2 class="titled"><span class="tag">[LNX]</span><span class="title">Linux · .deb</span></h2>
+                                <p class="muted">Ubuntu 22.04, Debian 12 and newer<span class="release-data"> · <span data-version>–</span> · <span data-size>–</span></span></p>
+                            </div>
+                            <a class="button primary" href="/downloads/linux/ecdh.chat_amd64.deb" download>Download .deb</a>
+                        </div>
+                        <div class="release-how">
+                            <p class="muted">Open it with your software installer, or run:</p>
+                            <div class="command"><code><span>sudo apt install ./ecdh.chat_amd64.deb</span></code></div>
+                            <p class="hash" hidden>SHA-256 <code data-hash></code></p>
+                            <div class="command"><code><span>sha256sum ecdh.chat_amd64.deb</span></code></div>
+                        </div>
+                    </li>
+                    <li class="release" data-os="linux" data-installer="appimage">
+                        <div class="release-head">
+                            <div>
+                                <h2 class="titled"><span class="tag">[LNX]</span><span class="title">Linux · AppImage</span></h2>
+                                <p class="muted">Any distribution · 64-bit<span class="release-data"> · <span data-version>–</span> · <span data-size>–</span></span></p>
+                            </div>
+                            <a class="button secondary" href="/downloads/linux/ecdh.chat-x86_64.AppImage" download>Download AppImage</a>
+                        </div>
+                        <div class="release-how">
+                            <p class="muted">Make it executable and start it. Ubuntu 22.04 and newer need FUSE 2 (<code>libfuse2t64</code>).</p>
+                            <div class="command"><code><span>chmod +x ecdh.chat-x86_64.AppImage</span><span>./ecdh.chat-x86_64.AppImage</span></code></div>
+                            <p class="hash" hidden>SHA-256 <code data-hash></code></p>
+                            <div class="command"><code><span>sha256sum ecdh.chat-x86_64.AppImage</span></code></div>
+                        </div>
+                    </li>
                 </ul>
-            </section>
-        </div>
+                <p class="fine">Calls aren’t in the Linux app yet; for calls, open ecdh.chat in a browser.</p>
+            </div>
+        </section>
+
+        <section class="dl-section" aria-labelledby="extras">
+            <div class="wrap">
+                <h2 id="extras">What the app adds</h2>
+                <ul class="features">
+                    <li>
+                        <span class="tag">[01]</span>
+                        <h3 class="title">Code that ships with the app</h3>
+                        <p class="muted">What runs on your computer only changes when you update.</p>
+                    </li>
+                    <li>
+                        <span class="tag">[02]</span>
+                        <h3 class="title">Privacy blur and screenshot blocking</h3>
+                        <p class="muted">Blur the chat when you look away. On Windows, hide it from screenshots.</p>
+                    </li>
+                    <li>
+                        <span class="tag">[03]</span>
+                        <h3 class="title">Stays with you</h3>
+                        <p class="muted">Your chat stays open in the tray, with alerts that never show what was said.</p>
+                    </li>
+                    <li>
+                        <span class="tag">[04]</span>
+                        <h3 class="title">Tiny and light</h3>
+                        <p class="muted">Under 2 MB on Windows, about 4 MB as a .deb.</p>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="dl-section last">
+            <div class="wrap">
+                <p class="dl-line">Rather build it yourself? The full source is public under GPL-3.0. <a href="https://github.com/ecdh-chat/ecdhchat-app" rel="noopener">View the source ↗</a></p>
+                <p class="dl-line">No app for macOS, Android or iOS yet. ecdh.chat works in any up-to-date browser. <a href="/">Open the web app →</a></p>
+            </div>
+        </section>
     </main>
 
     <footer class="site-footer">
         <div class="wrap">
-            <span>ecdh.chat · private chat, encrypted end to end</span>
+            <p><strong>ecdh.chat</strong> · when privacy matters</p>
             <nav aria-label="Footer">
                 <a href="/">Open chat</a>
                 <a href="/about">About</a>
-                <a href="/about#security">Security</a>
-                <a href="/faq">FAQ</a>
                 <a href="/download">Download</a>
-                <a href="/contact">Contact</a>
-                <a href="/privacy">Privacy</a>
+                <a href="mailto:hello@ecdh.chat">hello@ecdh.chat</a>
+                <a href="mailto:security@ecdh.chat">security@ecdh.chat</a>
+                <a href="https://github.com/ecdh-chat/ecdhchat-app" rel="noopener">Source ↗</a>
             </nav>
         </div>
     </footer>
