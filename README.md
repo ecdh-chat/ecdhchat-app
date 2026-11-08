@@ -4,8 +4,7 @@ The source of the [ecdh.chat](https://ecdh.chat) desktop app for Windows and Lin
 
 It's published so you don't have to trust our installers. Read the code, then build the app yourself.
 
-- How it works and what our server can and can't see: [ecdh.chat/about](https://ecdh.chat/about#security)
-- Privacy policy: [ecdh.chat/privacy](https://ecdh.chat/privacy)
+- How a chat works: [ecdh.chat/about](https://ecdh.chat/about)
 - Ready-made installers: [ecdh.chat/download](https://ecdh.chat/download)
 
 ## Build it yourself
@@ -58,7 +57,7 @@ The app makes no analytics, telemetry or tracking requests, and loads nothing fr
 
 ## Security reports
 
-Please email [security@ecdh.chat](mailto:security@ecdh.chat). See [ecdh.chat/contact](https://ecdh.chat/contact#security) for what to include.
+Please email [security@ecdh.chat](mailto:security@ecdh.chat). Include what you found, how to reproduce it, and the app version you tested.
 
 ## License
 
