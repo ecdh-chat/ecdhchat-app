@@ -1,6 +1,6 @@
 [package]
 name = "ecdh-chat"
-version = "4.2.1"
+version = "4.2.2"
 description = "Peer-to-peer end-to-end encrypted chat"
 license = "GPL-3.0-only"
 publish = false
@@ -35,7 +35,7 @@ windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_
 # WebRTC for the Linux app, whose webview (WebKitGTK) has none. See src/rtc.rs. Windows' WebView2
 # has its own, so none of this is built into the Windows app.
 [target.'cfg(target_os = "linux")'.dependencies]
-webrtc = "=0.17.2"
+webrtc = "=0.17.3"
 bytes = "1"
 tokio = { version = "1", features = ["sync", "time"] }
 
