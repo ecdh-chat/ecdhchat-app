@@ -11,7 +11,7 @@ import { callsAvailable, inviteFragment, isApp, isMobileBrowser, rtcAvailable, s
 import { decodeBase64Url, encodeBase64Url, randomSecret } from './secure-channel.js';
 import { connectSignaling } from './signaling.js';
 import { initTheme } from './theme.js';
-import { readChunks } from './transfer.js';
+import { genericName, readChunks, safeFileName } from './transfer.js';
 import * as ui from './ui.js';
 
 const ROOM_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -92,9 +92,18 @@ if (isApp) {
 start();
 
 async function start() {
-    // The invite secret is read once and never left in the address bar or history.
-    const { hash } = location;
-    if (hash) history.replaceState(null, '', location.pathname);
+    // An invite opened inside the app is handed over in sessionStorage, not the URL, so the secret
+    // stays out of the document URL. On the website the invite arrives in location.hash. Either way
+    // it's read once and never left in the address bar or history.
+    let stashed = null;
+    try {
+        stashed = sessionStorage.getItem('pendingInvite');
+        if (stashed) sessionStorage.removeItem('pendingInvite');
+    } catch {
+        // sessionStorage unavailable; the URL fallback below still works.
+    }
+    const hash = stashed || location.hash;
+    if (location.hash) history.replaceState(null, '', location.pathname);
 
     if (!window.isSecureContext || !window.crypto?.subtle || !rtcAvailable()) return end('unsupported');
 
@@ -123,12 +132,22 @@ async function openInvite(fragment) {
         if (!(await ask('Leave this chat?', 'Opening the new invite ends this chat for both of you.', 'Leave and open invite'))) return;
         await leaveChat();
     }
-    history.replaceState(null, '', fragment);
+    try {
+        // Hand the invite to the reloaded page out of band, and reload a clean URL, so the secret
+        // is never the document URL.
+        sessionStorage.setItem('pendingInvite', fragment);
+        history.replaceState(null, '', location.pathname);
+    } catch {
+        // No sessionStorage: fall back to carrying it in the URL (older behaviour).
+        history.replaceState(null, '', fragment);
+    }
     location.reload();
 }
 
 function chatBusy() {
-    return phase === 'connecting' || phase === 'open';
+    // 'inviting' counts too: a link has been created and maybe shared, so replacing it silently
+    // would leave the other person with a dead link.
+    return phase === 'inviting' || phase === 'connecting' || phase === 'open';
 }
 
 // Says goodbye so the other person sees the chat end right away, not after a timeout.
@@ -212,6 +231,8 @@ function handleSignaling(message) {
 
         case 'peer-joined':
             if (phase !== 'inviting' || !roomId) return;
+            // The relay credential (if this side asked for one) arrives now, with the pairing.
+            if (Array.isArray(message.iceServers)) iceServers = message.iceServers;
             ui.hideOverlays();
             connect('creator');
             break;
@@ -692,6 +713,9 @@ async function sendFile(file, caption, original, forcedKind) {
             // This browser can't read the image, so it goes as a plain file.
             kind = 'file';
         }
+    } else if (!original && file.type.startsWith('video/')) {
+        // Video isn't re-encoded, but its name is still dropped for a generic one.
+        name = genericName('video', file.name, 'mp4');
     }
     if (kind === 'file') mime = '';
     if (phase !== 'open') return;
@@ -743,6 +767,11 @@ function stopTransfer(id) {
 function receiveOffer(offer) {
     if (messages.has(offer.id)) return;
     const result = connection.incoming.offer(offer);
+    if (result.declined) {
+        sendMessage(encode(MessageType.FILE_CANCEL, { id: offer.id }));
+        ui.addSystem(`Declined “${safeFileName(offer.name)}”: this chat has already received a lot of data. Start a new chat to receive more.`);
+        return;
+    }
     const { transfer } = result;
     remember(transfer.id, { from: 'them', kind: transfer.kind, name: transfer.name, text: transfer.caption });
     ui.addFile({ id: transfer.id, from: 'them', name: transfer.name, size: transfer.size, kind: transfer.kind, caption: transfer.caption });

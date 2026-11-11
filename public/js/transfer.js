@@ -1,10 +1,20 @@
-import { CHUNK_SIZE, INLINE_AUDIO_TYPES, INLINE_IMAGE_TYPES, MAX_FILE_SIZE, MAX_INCOMING_TRANSFERS } from './config.js';
+import { CHUNK_SIZE, INLINE_AUDIO_TYPES, INLINE_IMAGE_TYPES, MAX_FILE_SIZE, MAX_INCOMING_TOTAL, MAX_INCOMING_TRANSFERS } from './config.js';
 import { ProtocolError } from './messages.js';
 
 export async function* readChunks(blob) {
     for (let offset = 0; offset < blob.size; offset += CHUNK_SIZE) {
         yield new Uint8Array(await blob.slice(offset, offset + CHUNK_SIZE).arrayBuffer());
     }
+}
+
+// A generic, non-identifying name for media, keeping only the file's extension (a real filename
+// can carry personal details, so media drop theirs). A photo is sent as photo.jpg, a video as
+// video.mp4; documents keep their name.
+export function genericName(base, originalName, fallbackExtension) {
+    const text = String(originalName || '');
+    const dot = text.lastIndexOf('.');
+    const extension = dot > 0 && text.length - dot <= 16 ? text.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+    return `${base}.${extension || fallbackExtension}`;
 }
 
 // Names come from the peer and become download names, so strip anything that could hide the
@@ -46,9 +56,13 @@ export function timeLeft(seconds) {
 }
 
 export class IncomingTransfers {
-    constructor({ maxConcurrent = MAX_INCOMING_TRANSFERS, maxFileSize = MAX_FILE_SIZE } = {}) {
+    constructor({ maxConcurrent = MAX_INCOMING_TRANSFERS, maxFileSize = MAX_FILE_SIZE, maxTotalBytes = MAX_INCOMING_TOTAL } = {}) {
         this.maxConcurrent = maxConcurrent;
         this.maxFileSize = maxFileSize;
+        this.maxTotalBytes = maxTotalBytes;
+        // Bytes accepted this chat. Files are kept in memory until the chat ends, so this only ever
+        // grows; past the budget, offers are declined rather than accepted.
+        this.accepted = 0;
         this.transfers = new Map();
     }
 
@@ -56,6 +70,9 @@ export class IncomingTransfers {
         if (this.transfers.has(id)) throw new ProtocolError('Duplicate transfer');
         if (this.transfers.size >= this.maxConcurrent) throw new ProtocolError('Too many transfers at once');
         if (size > this.maxFileSize) throw new ProtocolError('File too large');
+        // Over the chat's total budget: decline this file gracefully, don't close the chat.
+        if (this.accepted + size > this.maxTotalBytes) return { declined: true };
+        this.accepted += size;
 
         // Only allowlisted image and audio types are ever shown inline; everything else is a
         // download that the browser can't render inside this page.
@@ -104,5 +121,6 @@ export class IncomingTransfers {
 
     clear() {
         this.transfers.clear();
+        this.accepted = 0;
     }
 }

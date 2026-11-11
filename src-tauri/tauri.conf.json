@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "ecdh.chat",
   "mainBinaryName": "ecdh-chat",
-  "version": "4.2.2",
+  "version": "4.2.3",
   "identifier": "chat.ecdh.desktop",
   "build": {
     "frontendDist": "../public"
@@ -11,7 +11,8 @@
     "windows": [],
     "security": {
       "csp": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost https://ecdh.chat wss://ecdh.chat; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'",
-      "devCsp": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost http://localhost:3000 ws://localhost:3000; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'"
+      "devCsp": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost http://localhost:3000 ws://localhost:3000; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'",
+      "freezePrototype": true
     }
   },
   "plugins": {

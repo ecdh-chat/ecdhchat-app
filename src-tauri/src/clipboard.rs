@@ -70,10 +70,12 @@ fn write(text: &str) -> Result<(), String> {
         if EmptyClipboard() == 0 {
             return Err("clipboard busy".to_string());
         }
-        set(CF_UNICODETEXT, &utf16)?;
+        // The "keep out of history/cloud/monitors" markers go on first, so a failure part-way
+        // never leaves the text on the clipboard without them. The text itself goes on last.
         set(format("ExcludeClipboardContentFromMonitorProcessing"), &zero)?;
         set(format("CanIncludeInClipboardHistory"), &zero)?;
-        set(format("CanUploadToCloudClipboard"), &zero)
+        set(format("CanUploadToCloudClipboard"), &zero)?;
+        set(CF_UNICODETEXT, &utf16)
     })();
     unsafe { CloseClipboard() };
     result

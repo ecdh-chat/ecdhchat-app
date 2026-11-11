@@ -2,7 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHUNK_SIZE } from '../public/js/config.js';
 import { ProtocolError, randomId } from '../public/js/messages.js';
-import { IncomingTransfers, TransferMeter, readChunks, safeFileName, timeLeft } from '../public/js/transfer.js';
+import { IncomingTransfers, TransferMeter, genericName, readChunks, safeFileName, timeLeft } from '../public/js/transfer.js';
 
 function offer(overrides = {}) {
     return { id: randomId(), name: 'report.pdf', size: 40000, mime: '', kind: 'file', caption: '', ...overrides };
@@ -81,12 +81,31 @@ describe('file transfers', () => {
         assert.throws(() => transfers.offer(offer({ size: 10 })), ProtocolError);
     });
 
+    test('declines files once the chat has received its total budget', () => {
+        const transfers = new IncomingTransfers({ maxFileSize: 1000, maxTotalBytes: 1500 });
+        assert.equal(transfers.offer(offer({ size: 900 })).done, false);   // 900 held
+        assert.deepEqual(transfers.offer(offer({ size: 900 })), { declined: true }); // 1800 > 1500
+        assert.equal(transfers.offer(offer({ size: 500 })).done, false);   // 1400 ≤ 1500 still fits
+        assert.deepEqual(transfers.offer(offer({ size: 200 })), { declined: true });
+        // a new chat starts the budget over
+        transfers.clear();
+        assert.equal(transfers.offer(offer({ size: 900 })).done, false);
+    });
+
     test('drop chunks that arrive after a cancel', () => {
         const transfers = new IncomingTransfers();
         const { transfer } = transfers.offer(offer());
         assert.equal(transfers.cancel(transfer.id), true);
         assert.equal(transfers.chunk(transfer.id, 0, new Uint8Array(CHUNK_SIZE)), null);
         assert.equal(transfers.cancel(transfer.id), false);
+    });
+
+    test('gives media a generic name, keeping just the extension', () => {
+        assert.equal(genericName('video', 'Family reunion 2026.MP4', 'mp4'), 'video.mp4');
+        assert.equal(genericName('video', 'clip.webm', 'mp4'), 'video.webm');
+        assert.equal(genericName('video', 'noextension', 'mp4'), 'video.mp4');
+        assert.equal(genericName('video', '', 'mp4'), 'video.mp4');
+        assert.equal(genericName('file', 'archive.name.TAR.GZ', 'bin'), 'file.gz');
     });
 
     test('clean up file names from the peer', () => {

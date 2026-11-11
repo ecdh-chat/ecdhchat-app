@@ -1,0 +1,5 @@
+# Control Flow Guard on the Windows build: the compiler adds checks that an indirect call or
+# return goes to a valid target, a standard Windows mitigation. Windows-only; other targets are
+# unaffected.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "control-flow-guard"]

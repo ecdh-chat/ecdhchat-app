@@ -18,7 +18,9 @@ export async function cleanImage(file) {
         const blob = await new Promise((resolve, reject) => {
             canvas.toBlob((result) => (result ? resolve(result) : reject(new Error('Could not encode image'))), type, 0.85);
         });
-        return { blob, type, name: withExtension(file.name, type === 'image/png' ? 'png' : 'jpg') };
+        // The redraw already drops the image's metadata; its name is metadata too, so it becomes a
+        // generic one. "Send original" keeps the real file (and its name) on purpose.
+        return { blob, type, name: type === 'image/png' ? 'photo.png' : 'photo.jpg' };
     } finally {
         bitmap.close();
     }
@@ -30,9 +32,4 @@ function hasTransparency(context, canvas) {
         if (data[i] < 255) return true;
     }
     return false;
-}
-
-function withExtension(name, extension) {
-    const base = (name || '').replace(/\.[^.]*$/, '') || 'image';
-    return `${base}.${extension}`;
 }

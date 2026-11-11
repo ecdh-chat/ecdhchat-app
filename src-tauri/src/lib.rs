@@ -81,12 +81,12 @@ pub fn run() {
             // Installers register ecdhchat:// themselves; a dev build has to do it on start.
             #[cfg(all(debug_assertions, any(windows, target_os = "linux")))]
             app.deep_link().register_all()?;
-            // So does an AppImage, which is never installed. Without the desktop tools this needs,
-            // links just don't open the app.
+            // So must a release Linux build: the bundled .desktop file registers the scheme but
+            // can't carry the "%u" that passes the link to a running app, and an AppImage isn't
+            // installed at all. register_all writes a per-user handler with "%u". Without the
+            // desktop tools this needs, links just don't open the app.
             #[cfg(all(not(debug_assertions), target_os = "linux"))]
-            if app.env().appimage.is_some() {
-                let _ = app.deep_link().register_all();
-            }
+            let _ = app.deep_link().register_all();
 
             let pending = app.deep_link().get_current()?.and_then(|urls| invite(&urls));
             app.manage(PendingInvite(Mutex::new(pending)));

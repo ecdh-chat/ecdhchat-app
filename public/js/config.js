@@ -3,6 +3,9 @@ export const CHUNK_SIZE = 60 * 1024;
 export const MAX_FILE_SIZE = 100 * 1024 * 1024;
 export const MAX_TEXT_LENGTH = 10000;
 export const MAX_INCOMING_TRANSFERS = 3;
+// Received files stay in memory until the chat ends, so one chat only accepts this much in total;
+// beyond it, further files are declined (start a new chat to receive more).
+export const MAX_INCOMING_TOTAL = 500 * 1024 * 1024;
 export const INLINE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 export const INLINE_AUDIO_TYPES = ['audio/webm', 'audio/ogg', 'audio/mp4'];
 export const IMAGE_MAX_DIMENSION = 2560;

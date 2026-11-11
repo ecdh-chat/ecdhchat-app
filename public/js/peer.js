@@ -2,6 +2,8 @@ import { createPeerConnection } from './platform.js';
 
 const HIGH_WATER_MARK = 1024 * 1024;
 const LOW_WATER_MARK = 256 * 1024;
+// A real connection only ever trickles a handful of candidates, so cap how many are accepted.
+const MAX_REMOTE_CANDIDATES = 50;
 
 export class Peer {
     constructor({ role, iceServers, onSignal, onOpen, onFrame, onClose, onStateChange, onTrack }) {
@@ -10,6 +12,7 @@ export class Peer {
         this.handlers = { onOpen, onFrame, onClose };
         this.channel = null;
         this.senders = new Map();
+        this.remoteCandidates = 0;
         this.signals = Promise.resolve();
         this.closed = new Promise((resolve) => { this.resolveClosed = resolve; });
         this.pc = createPeerConnection({ iceServers, iceTransportPolicy: 'all' });
@@ -63,6 +66,8 @@ export class Peer {
                     this.onSignal({ sdp: this.pc.localDescription.toJSON() });
                 }
             } else if (signal.candidate) {
+                if (this.remoteCandidates >= MAX_REMOTE_CANDIDATES) return;
+                this.remoteCandidates++;
                 await this.pc.addIceCandidate(signal.candidate);
             }
         });

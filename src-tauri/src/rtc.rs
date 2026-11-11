@@ -285,8 +285,12 @@ impl Peer {
             let weak = weak.clone();
             Box::pin(async move {
                 if let Some(peer) = weak.upgrade() {
-                    peer.sink.event(Event::Channel { label: channel.label().to_owned() });
-                    peer.attach(channel).await;
+                    // Announce the channel only once it's been accepted, and refuse a second one;
+                    // only an accepted channel is handed to the page.
+                    let label = channel.label().to_owned();
+                    if peer.attach(channel).await {
+                        peer.sink.event(Event::Channel { label });
+                    }
                 }
             })
         }));
@@ -306,7 +310,8 @@ impl Peer {
         Ok(())
     }
 
-    async fn attach(&self, channel: Arc<RTCDataChannel>) {
+    /// Takes the one data channel, or refuses a second one. Returns whether it was taken.
+    async fn attach(&self, channel: Arc<RTCDataChannel>) -> bool {
         let taken = match self.channel.lock() {
             Ok(mut slot) if slot.is_none() => {
                 *slot = Some(channel.clone());
@@ -316,7 +321,7 @@ impl Peer {
         };
         if !taken {
             let _ = channel.close().await;
-            return;
+            return false;
         }
         // Detached (see new()), the open channel is used through its stream: read_frames() reads it
         // and reports its closing, and send() writes to it.
@@ -346,6 +351,7 @@ impl Peer {
                 tauri::async_runtime::spawn(read_frames(stream, inbox, sink));
             })
         }));
+        true
     }
 
     /// setLocalDescription() with no arguments: an answer when an offer is waiting, otherwise an

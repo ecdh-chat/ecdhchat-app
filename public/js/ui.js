@@ -1156,13 +1156,12 @@ async function copyLink() {
 // The Windows app copies through its Rust side, which keeps the text out of clipboard history and
 // the cloud clipboard (src-tauri/src/clipboard.rs).
 async function copyText(text) {
+    // On Windows there's no browser-clipboard fallback: that path writes the text into clipboard
+    // history and the cloud clipboard. A failure rejects, and the caller handles it (copyLink
+    // selects the link for manual copy; the message menu just does nothing).
     if (appOs === 'windows') {
-        try {
-            await appInvoke('copy_text', { text });
-            return;
-        } catch {
-            // Falls back to the browser's clipboard.
-        }
+        await appInvoke('copy_text', { text });
+        return;
     }
     await navigator.clipboard.writeText(text);
 }
