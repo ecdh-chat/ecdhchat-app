@@ -513,6 +513,7 @@ function finishEdit(text) {
     if (!text || !canEdit(message) || text === message.text) return;
     message.text = text;
     ui.editMessage(message.id, text);
+    requote(message.id);
     sendMessage(encode(MessageType.EDIT, { id: message.id, text }));
 }
 
@@ -522,6 +523,7 @@ function edited({ id, text }) {
     if (!message || message.from !== 'them' || message.kind !== 'text' || message.deleted || Date.now() - message.at > EDIT_ACCEPT_MS) return;
     message.text = text;
     ui.editMessage(id, text);
+    requote(id);
 }
 
 // "Seen" works only when both people have it on, and only reports messages you've actually had
@@ -601,6 +603,22 @@ function quoteFor(id) {
     return { id, label: label(message.from), snippet: snippet.slice(0, 120) };
 }
 
+// A quote shows what its message says now: the new text after an edit, and nothing of it once
+// the message is deleted or has vanished. A reply still being written to it is updated the same
+// way, or called off if the message is gone.
+function requote(id) {
+    const quote = quoteFor(id);
+    ui.updateQuotes(quote);
+    if (replyTo !== id) return;
+    const message = messages.get(id);
+    if (message && !message.deleted) {
+        ui.setReply(quote);
+        return;
+    }
+    replyTo = null;
+    ui.clearReply();
+}
+
 function toggleReaction(id, emoji) {
     const message = messages.get(id);
     if (!message || message.deleted || phase !== 'open') return;
@@ -651,6 +669,7 @@ function forget(id, placeholder) {
         messages.delete(id);
         ui.removeMessage(id);
     }
+    requote(id);
 }
 
 function expireLater(id, seconds) {

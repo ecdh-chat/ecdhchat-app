@@ -584,11 +584,26 @@ export function setReactions(id, reactions) {
     }));
 }
 
-export function startReply({ label, snippet }) {
-    els.replyLabel.textContent = label;
-    els.replySnippet.textContent = snippet;
+export function startReply(quote) {
+    setReply(quote);
     els.replyBar.hidden = false;
     els.messageInput.focus();
+}
+
+// Also called when the message being replied to is edited.
+export function setReply({ label, snippet }) {
+    els.replyLabel.textContent = label;
+    els.replySnippet.textContent = snippet;
+}
+
+// Every reply's quote of one message shows what that message says now (see main.js requote).
+export function updateQuotes({ id, label, snippet }) {
+    for (const button of els.messages.querySelectorAll('.quote')) {
+        if (button.dataset.quotes !== id) continue;
+        button.firstChild.textContent = label;
+        button.lastChild.textContent = snippet;
+        button.disabled = !rows.has(id);
+    }
 }
 
 export function clearReply() {
@@ -927,6 +942,7 @@ function initSettings() {
 
 function quoteButton({ id, label, snippet }) {
     const button = el('button', { type: 'button', className: 'quote' }, [el('strong', { textContent: label }), el('span', { textContent: snippet })]);
+    button.dataset.quotes = id;
     button.disabled = !rows.has(id);
     button.addEventListener('click', () => {
         const target = rows.get(id);
