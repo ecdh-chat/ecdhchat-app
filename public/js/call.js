@@ -97,6 +97,7 @@ export class Call {
         }
         if (this.state !== 'outgoing') return this.stopLocal();
 
+        this.noteMissingCamera();
         this.showScreen('Calling…');
         this.send('invite');
         this.timer = setTimeout(() => {
@@ -114,7 +115,7 @@ export class Call {
                 this.setState('incoming');
                 this.els.bannerText.textContent = video ? 'Incoming video call' : 'Incoming voice call';
                 this.els.banner.hidden = false;
-                alerts.alertCall();
+                alerts.startRinging();
                 this.timer = setTimeout(() => {
                     this.reset();
                     this.onSystem('Missed call.');
@@ -148,6 +149,7 @@ export class Call {
     async accept() {
         if (this.state !== 'incoming') return;
         clearTimeout(this.timer);
+        alerts.stopRinging();
         this.els.banner.hidden = true;
         try {
             this.local = await getCallMedia(this.video);
@@ -158,8 +160,18 @@ export class Call {
             return;
         }
         if (this.state !== 'incoming') return this.stopLocal();
+        this.noteMissingCamera();
         this.send('accept');
         this.activate();
+    }
+
+    // A video call goes ahead by voice from a device whose camera can't be used (media.js).
+    noteMissingCamera() {
+        if (this.video && !this.hasCamera()) this.onSystem('Your camera can’t be used, so they’ll hear you but not see you.');
+    }
+
+    hasCamera() {
+        return Boolean(this.local?.getVideoTracks().length);
     }
 
     decline() {
@@ -201,6 +213,7 @@ export class Call {
     reset() {
         clearTimeout(this.timer);
         clearInterval(this.clock);
+        alerts.stopRinging();
         for (const track of this.screen?.getTracks() ?? []) track.stop();
         this.screen = null;
         this.els.screen.classList.remove('sharing', 'remote-sharing');
@@ -223,9 +236,11 @@ export class Call {
     showScreen(status) {
         this.els.screen.hidden = false;
         this.els.screen.classList.toggle('voice', !this.video);
-        this.els.camera.hidden = !this.video;
+        // Your own picture and its button are only there when a camera is.
+        this.els.camera.hidden = !this.hasCamera();
         this.els.share.hidden = !this.screenAllowed || this.state !== 'active';
-        this.els.localVideo.srcObject = this.video ? this.local : null;
+        this.els.localVideo.hidden = !this.hasCamera();
+        this.els.localVideo.srcObject = this.hasCamera() ? this.local : null;
         this.els.status.textContent = status;
         this.setPressed(this.els.mute, false);
         this.setPressed(this.els.camera, false);

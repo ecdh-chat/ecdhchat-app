@@ -2,7 +2,12 @@
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "mobile",
   "platforms": ["android", "iOS"],
-  "description": "What the phone app's page may ask the app to do: only notifications. Links and invites are handled on the Rust side; the phone app has no tray, window controls, app settings or self-updates.",
+  "description": "What the phone app's page may ask the app to do: notifications, and saving a received file where the person chooses (PhonePlugin.kt). Links, invites and the Back button are handled on the app's side; the phone app has no tray, window controls, app settings or self-updates.",
   "windows": ["main"],
-  "permissions": ["notification:default"]
+  "permissions": [
+    "notification:default",
+    "phone:allow-save-file",
+    "phone:allow-save-chunk",
+    "phone:allow-save-end"
+  ]
 }

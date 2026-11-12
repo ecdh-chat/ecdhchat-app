@@ -56,6 +56,8 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         // Links are opened by on_new_window below, so the page needs no permission to open them.
         .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build());
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(phone_plugin());
     #[cfg(desktop)]
     let builder = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -150,6 +152,19 @@ pub fn run() {
         .expect("error while running ecdh.chat");
 }
 
+// The Android app's own plugin, PhonePlugin.kt beside MainActivity.kt: what the phone's webview
+// can't do for the page itself (saving a received file). Its commands are Kotlin's; the page may
+// only use the ones capabilities/mobile.json allows by name.
+#[cfg(target_os = "android")]
+fn phone_plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    tauri::plugin::Builder::new("phone")
+        .setup(|_app, api| {
+            api.register_android_plugin("chat.ecdh.app", "PhonePlugin")?;
+            Ok(())
+        })
+        .build()
+}
+
 fn window_event(window: &Window, event: &WindowEvent) {
     let app = window.app_handle();
     match event {
@@ -229,7 +244,12 @@ fn window(app: &AppHandle) -> WebviewWindowBuilder<'_, tauri::Wry, AppHandle> {
     let links = app.clone();
     let popups = app.clone();
     WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::App("index.html".into()))
-        .initialization_script(format!("window.__ECDH_SERVER__ = {};window.__ECDH_OS__ = {};", js_string(SERVER), js_string(std::env::consts::OS)))
+        .initialization_script(format!(
+            "window.__ECDH_SERVER__ = {};window.__ECDH_OS__ = {};window.__ECDH_VERSION__ = {};",
+            js_string(SERVER),
+            js_string(std::env::consts::OS),
+            js_string(&app.package_info().version.to_string())
+        ))
         // The window only ever shows the app's own page. Links from messages open in the browser.
         .on_navigation(move |url| {
             if is_app_page(url) {
@@ -267,9 +287,22 @@ fn is_app_page(url: &Url) -> bool {
 }
 
 fn open_external(app: &AppHandle, url: &Url) {
-    if matches!(url.scheme(), "http" | "https") {
-        let _ = app.opener().open_url(url.as_str(), None::<&str>);
+    if !matches!(url.scheme(), "http" | "https") {
+        return;
     }
+    // On a phone the opener does its work on the app's main thread and waits for it. This is
+    // called from that thread (the webview asking whether it may navigate), so waiting here
+    // would wait for itself and freeze the app. It's handed to another thread instead.
+    #[cfg(mobile)]
+    {
+        let app = app.clone();
+        let url = url.to_string();
+        std::thread::spawn(move || {
+            let _ = app.opener().open_url(url, None::<&str>);
+        });
+    }
+    #[cfg(desktop)]
+    let _ = app.opener().open_url(url.as_str(), None::<&str>);
 }
 
 // Returns "#room.secret" from an ecdhchat://join#room.secret link, or None for anything else.

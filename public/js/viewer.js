@@ -31,7 +31,17 @@ let opener = null;
 let view = { scale: 1, x: 0, y: 0 };
 let press = null;
 
-export function initViewer() {
+// save: given where a download link can't do the saving (the phone app); it gets the image's
+// address and name.
+export function initViewer({ save = null } = {}) {
+    if (save) {
+        els.download.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (!current) return;
+            const { url, name } = images.get(current);
+            save(url, name);
+        });
+    }
     els.prev.addEventListener('click', () => step(-1));
     els.next.addEventListener('click', () => step(1));
     els.viewer.addEventListener('keydown', (event) => {

@@ -11,6 +11,8 @@ export const isApp = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in w
 // The app's operating system as Rust names it ("windows", "linux", "android"), or null on the
 // website.
 export const appOs = (isApp && window.__ECDH_OS__) || null;
+// The app's own version ("4.3.1"), or null on the website.
+export const appVersion = (isApp && window.__ECDH_VERSION__) || null;
 // The phone app. It has none of the desktop app's window, tray, settings or self-updates.
 export const isMobileApp = appOs === 'android' || appOs === 'ios';
 export const isDesktopApp = isApp && !isMobileApp;

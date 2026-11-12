@@ -57,7 +57,7 @@ The APK lands in `src-tauri/gen/android/app/build/outputs/apk/universal/release/
 | `src-tauri/src/updates.rs` | Update checks: an update installs only after you agree, and only if it's signed with our release key |
 | `src-tauri/tauri.conf.json` | The Content Security Policy and the update key's public half |
 | `src-tauri/tauri.windows.conf.json`, `tauri.linux.conf.json` | Each system's installer settings |
-| `src-tauri/gen/android/app/src/main/` | The Android app: its permissions (`AndroidManifest.xml`), screenshot blocking and the message alert channel (`MainActivity.kt`) |
+| `src-tauri/gen/android/app/src/main/` | The Android app: its permissions (`AndroidManifest.xml`), screenshot blocking, the Back button and the message alert channel (`MainActivity.kt`), and saving a received file where you choose (`PhonePlugin.kt`) |
 
 The app makes no analytics, telemetry or tracking requests, and loads nothing from other companies.
 
@@ -66,7 +66,7 @@ The app makes no analytics, telemetry or tracking requests, and loads nothing fr
 - **Updates are always your choice.** Your build checks ecdh.chat for new versions the same way ours does, and offers one only if it's signed with our release key. Installing it replaces your build with ours. To stay on builds you made yourself, dismiss the offer and build the new version from this repository instead.
 - **Builds aren't byte-for-byte identical.** The installers include build timestamps, so their SHA-256 won't match ours even from the same source. Verify by reading and building, not by comparing hashes.
 - **Calls aren't in the Linux app yet.** Chats, files and voice messages work as everywhere else.
-- **The Android app doesn't update itself.** Get new versions from [ecdh.chat/download](https://ecdh.chat/download). Messages arrive while the app is open; Android pauses apps in the background, and a paused app can't receive.
+- **The Android app doesn't update itself.** It tells you when a newer version is out; get it from [ecdh.chat/download](https://ecdh.chat/download). Messages arrive while the app is open; Android pauses apps in the background, and a paused app can't receive.
 - **Development builds** (`npm run app:dev`) expect an ecdh.chat signaling server at `http://localhost:3000`, which isn't part of this repository. Use `npm run app:build` to get an app that works with ecdh.chat.
 
 ## Security reports

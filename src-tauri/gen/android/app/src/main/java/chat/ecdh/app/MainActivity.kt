@@ -6,11 +6,15 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
+import android.webkit.WebView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : TauriActivity() {
+  private var webView: WebView? = null
+
   override fun onCreate(savedInstanceState: Bundle?) {
     createMessageChannel()
     enableEdgeToEdge()
@@ -33,6 +37,28 @@ class MainActivity : TauriActivity() {
       view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
       WindowInsetsCompat.CONSUMED
     }
+
+    // Back closes what's open on top of the chat (a dialog, the image viewer, a menu): the page
+    // says whether it had anything to close (ecdhBack, public/js/mobile.js). With nothing to
+    // close, the app goes to the background and the chat stays open. Back never closes the app,
+    // which would end the chat without asking. Tauri's own Back handling passes the press on to
+    // this one, because the page has no history to go back through.
+    onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+      override fun handleOnBackPressed() {
+        val page = webView ?: return leave()
+        page.evaluateJavascript("window.ecdhBack ? window.ecdhBack() : false") { closed ->
+          if (closed != "true") leave()
+        }
+      }
+    })
+  }
+
+  override fun onWebViewCreate(webView: WebView) {
+    this.webView = webView
+  }
+
+  private fun leave() {
+    moveTaskToBack(true)
   }
 
   // Message alerts go to this channel (the page names it: public/js/alerts.js). The notification

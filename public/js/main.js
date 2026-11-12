@@ -7,7 +7,8 @@ import { plainText } from './format.js';
 import { cleanImage } from './images.js';
 import { startRecording, voiceMessageName } from './media.js';
 import { FEATURES, MessageType, NO_CALLS, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from './messages.js';
-import { callsAvailable, inviteFragment, isApp, isDesktopApp, mediaPermissionHint, offersRelay, rtcAvailable, serverOrigin } from './platform.js';
+import { initMobile } from './mobile.js';
+import { callsAvailable, inviteFragment, isApp, isDesktopApp, isMobileApp, mediaPermissionHint, offersRelay, rtcAvailable, serverOrigin } from './platform.js';
 import { decodeBase64Url, encodeBase64Url, randomSecret } from './secure-channel.js';
 import { connectSignaling } from './signaling.js';
 import { initTheme } from './theme.js';
@@ -84,12 +85,22 @@ window.addEventListener('pagehide', () => {
     connection?.peer.close();
     signaling?.close();
 });
+// On the website, closing or reloading the tab ends the chat for good, so the browser asks first.
+// The apps ask in their own words before they close (desktop.js).
+if (!isApp) {
+    window.addEventListener('beforeunload', (event) => {
+        if (phase === 'open') event.preventDefault();
+    });
+}
 if (isApp) {
     // The Rust side calls this when someone opens an ecdhchat:// invite link with the app.
     window.ecdhOpenInvite = (link) => pasteInvite(link);
 }
 if (isDesktopApp) {
     initDesktop({ busy: chatBusy, leave: leaveChat, newChat: () => location.assign('/'), openSettings: ui.openSettings });
+}
+if (isMobileApp) {
+    initMobile({ back: ui.closeTopLayer });
 }
 start();
 

@@ -5,7 +5,8 @@ import { el, icon } from './dom.js';
 import { EMOJI_CATEGORIES } from './emoji.js';
 import { emojiOnly, parse } from './format.js';
 import { REACTIONS } from './messages.js';
-import { appInvoke, appOs, inBackground, isApp, isDesktopApp, onForeground, serverOrigin } from './platform.js';
+import { saveFile } from './mobile.js';
+import { appInvoke, appOs, inBackground, isApp, isDesktopApp, isMobileApp, onForeground, serverOrigin } from './platform.js';
 import { TransferMeter, timeLeft } from './transfer.js';
 import { addImage, forgetImages, initViewer, resetViewer } from './viewer.js';
 import { formatDuration, voicePlayer } from './voice-player.js';
@@ -293,7 +294,7 @@ export function init(callbacks) {
 
     initMessageMenu();
     initSettings();
-    initViewer();
+    initViewer({ save: isMobileApp ? saveToPhone : null });
 
     onForeground(() => {
         unread = 0;
@@ -1069,8 +1070,51 @@ function fileLabel(name, size, url = null) {
             el('span', { className: 'file-size', textContent: formatBytes(size) }),
         ]),
     ]);
-    if (url) label.append(el('a', { className: 'secondary-button', href: url, download: name, textContent: 'Download' }));
+    if (url) {
+        const download = el('a', { className: 'secondary-button', href: url, download: name, textContent: 'Download' });
+        if (isMobileApp) {
+            download.addEventListener('click', (event) => {
+                event.preventDefault();
+                saveToPhone(url, name);
+            });
+        }
+        label.append(download);
+    }
     return label;
+}
+
+// The phone app's webview can't download the page's own blob: links, so there the file is handed
+// to the app, which asks where to save it (mobile.js). The app saves one file at a time, so a
+// second Download waits for the first save to finish instead of cutting it off.
+let phoneSaves = Promise.resolve();
+function saveToPhone(url, name) {
+    phoneSaves = phoneSaves.then(() => saveOneToPhone(url, name));
+}
+
+async function saveOneToPhone(url, name) {
+    const blob = urls.get(url);
+    if (!blob) return;
+    try {
+        if (await saveFile(blob, name)) addSystem(`Saved “${name}”.`);
+    } catch {
+        addSystem(`“${name}” couldn’t be saved.`);
+    }
+}
+
+// The phone's Back button: closes whatever is open on top of the chat (a menu, the emoji picker,
+// a dialog, the image viewer) and returns whether there was anything to close.
+export function closeTopLayer() {
+    for (const popover of [els.messageMenu, els.emojiPicker]) {
+        if (popover.matches(':popover-open')) {
+            popover.hidePopover();
+            return true;
+        }
+    }
+    // With more than one dialog open, the one on top is the one in the middle of the screen.
+    const open = [...document.querySelectorAll('dialog[open]')];
+    const top = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2)?.closest('dialog[open]') ?? open.at(-1);
+    top?.close();
+    return Boolean(top);
 }
 
 // A link opens outside the chat, where the site sees this person's IP address, so it's never

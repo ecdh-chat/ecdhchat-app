@@ -1,10 +1,18 @@
 const RECORDING_TYPES = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4'];
 
-export function getCallMedia(video) {
-    return navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-        video: video ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } : false,
-    });
+// The microphone, and for a video call the camera too. Where the camera can't be used (there is
+// none, it's blocked, or another program has it) a video call still gets the microphone, so the
+// stream may come back without video.
+export async function getCallMedia(video) {
+    const audio = { echoCancellation: true, noiseSuppression: true };
+    if (video) {
+        try {
+            return await navigator.mediaDevices.getUserMedia({ audio, video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } });
+        } catch {
+            // Falls through to the microphone alone.
+        }
+    }
+    return navigator.mediaDevices.getUserMedia({ audio, video: false });
 }
 
 // Asks which screen or window to share. Audio isn't shared.

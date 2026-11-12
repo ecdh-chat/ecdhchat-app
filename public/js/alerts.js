@@ -1,5 +1,5 @@
-// Sounds and notifications for when the tab is in the background. Notifications never include
-// what was said, only that something arrived.
+// Sounds and notifications for when the tab is in the background, and the ring of an incoming
+// call. Notifications never include what was said, only that something arrived.
 
 import { appOs, inBackground } from './platform.js';
 
@@ -13,7 +13,9 @@ const TONES = {
     pop: [[0, 1200, 0.08, 'triangle'], [0.07, 1600, 0.08, 'triangle']],
     bell: [[0, 988, 0.6, 'sine'], [0, 1976, 0.35, 'sine']],
 };
+const RING_EVERY_MS = 3000;
 let audioContext = null;
+let ringTimer = null;
 
 export function preferences() {
     return { sound: read(SOUND, '1') === '1', notify: read(NOTIFY, '0') === '1' && notificationsAllowed() };
@@ -53,18 +55,29 @@ export function notificationsBlocked() {
 }
 
 export function alertMessage() {
-    alert('New message', 1);
-}
-
-export function alertCall() {
-    alert('Incoming call', 3);
-}
-
-function alert(body, chimes) {
     if (!inBackground()) return;
     const { sound, notify } = preferences();
-    if (sound) chime(chimes);
-    if (!notify) return;
+    if (sound) chime(1);
+    if (notify) showNotification('New message');
+}
+
+// An incoming call rings until it's answered, turned down or given up on, and it rings with the
+// window in front too: unlike a message, a call needs an answer now.
+export function startRinging() {
+    stopRinging();
+    const { sound, notify } = preferences();
+    if (notify && inBackground()) showNotification('Incoming call');
+    if (!sound) return;
+    chime(2);
+    ringTimer = setInterval(() => chime(2), RING_EVERY_MS);
+}
+
+export function stopRinging() {
+    clearInterval(ringTimer);
+    ringTimer = null;
+}
+
+function showNotification(body) {
     try {
         // The phone app names its status-bar icon (a drawable in the app, ic_notification.xml;
         // otherwise Android shows a generic one) and its "messages" channel, which pops alerts up
@@ -82,7 +95,7 @@ function alert(body, chimes) {
     }
 }
 
-// The chosen tone, generated on the spot so no audio file is needed. Calls repeat it.
+// The chosen tone, generated on the spot so no audio file is needed. A ring plays it twice.
 function chime(times) {
     try {
         audioContext ??= new AudioContext();
