@@ -1,18 +1,27 @@
 mod clipboard;
 #[cfg(target_os = "linux")]
 mod rtc;
+// The desktop app's settings, tray and self-updates. The phone app has none of them.
+#[cfg(desktop)]
 mod settings;
+#[cfg(desktop)]
 mod tray;
+#[cfg(desktop)]
 mod updates;
 
 use std::sync::Mutex;
 
+#[cfg(desktop)]
 use settings::SettingsState;
+#[cfg(desktop)]
+use tauri::WebviewWindow;
 use tauri::webview::{NewWindowResponse, PageLoadEvent};
-use tauri::{AppHandle, Manager, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window, WindowEvent};
+use tauri::{AppHandle, Manager, Url, WebviewUrl, WebviewWindowBuilder, Window, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
+#[cfg(desktop)]
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
+#[cfg(desktop)]
 use tauri_plugin_window_state::StateFlags;
 
 // The signaling server the app talks to. If this changes, connect-src in tauri.conf.json has to
@@ -20,22 +29,35 @@ use tauri_plugin_window_state::StateFlags;
 const SERVER: &str = if cfg!(debug_assertions) { "http://localhost:3000" } else { "https://ecdh.chat" };
 const WINDOW: &str = "main";
 // Windows starts the app with this when "Launch at startup" is on; it then stays in the tray.
+#[cfg(desktop)]
 const AUTOSTART_ARG: &str = "--autostart";
+#[cfg(desktop)]
 const STARTUP_ENTRY: &str = "ecdh.chat";
 
-// An invite opened with the app before its page had loaded.
-struct PendingInvite(Mutex<Option<String>>);
+// Invite links waiting for the page. A link can come before the page has loaded or while it
+// reloads: the one that starts the app, and on a phone that one arrives as an open-url event,
+// usually before the page exists. It's held here and handed over once the page has loaded.
+struct InviteState(Mutex<Invites>);
+
+struct Invites {
+    page_ready: bool,
+    pending: Option<String>,
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        // Must come first: a second launch, such as clicking an invite link while the app is
-        // open, hands its link to this one and quits.
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show(app)))
+    let builder = tauri::Builder::default();
+    // Must come first: a second launch, such as clicking an invite link while the app is open,
+    // hands its link to this one and quits. A phone only ever runs one copy.
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show(app)));
+    let builder = builder
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_notification::init())
         // Links are opened by on_new_window below, so the page needs no permission to open them.
-        .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build())
+        .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build());
+    #[cfg(desktop)]
+    let builder = builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         // The startup entry's name; the uninstaller removes it by this name (installer/hooks.nsh).
         .plugin(
@@ -49,15 +71,23 @@ pub fn run() {
             tauri_plugin_window_state::Builder::new()
                 .with_state_flags(StateFlags::SIZE | StateFlags::POSITION | StateFlags::MAXIMIZED)
                 .build(),
-        )
+        );
+    builder
         .invoke_handler(tauri::generate_handler![
+            #[cfg(desktop)]
             settings::get_settings,
+            #[cfg(desktop)]
             settings::set_settings,
+            #[cfg(desktop)]
             tray::quit_app,
+            #[cfg(desktop)]
             tray::set_unread,
+            #[cfg(desktop)]
             updates::get_update,
+            #[cfg(desktop)]
             updates::install_update,
             clipboard::copy_text,
+            #[cfg(desktop)]
             window_action,
             #[cfg(target_os = "linux")]
             rtc::rtc_create,
@@ -89,26 +119,31 @@ pub fn run() {
             let _ = app.deep_link().register_all();
 
             let pending = app.deep_link().get_current()?.and_then(|urls| invite(&urls));
-            app.manage(PendingInvite(Mutex::new(pending)));
+            app.manage(InviteState(Mutex::new(Invites { page_ready: false, pending })));
 
             let handle = app.handle().clone();
             app.deep_link().on_open_url(move |event| {
                 if let Some(fragment) = invite(&event.urls()) {
-                    open_invite(&handle, &fragment);
+                    deliver_invite(&handle, fragment);
                 }
             });
 
-            let state = SettingsState::load(app.handle());
-            let current = state.get();
-            app.manage(state);
             #[cfg(target_os = "linux")]
             app.manage(rtc::RtcState::default());
 
-            let hidden = std::env::args().any(|arg| arg == AUTOSTART_ARG);
-            open_window(app.handle(), &current, hidden)?;
-            tray::create(app.handle())?;
-            settings::apply(app.handle(), &current);
-            updates::start(app.handle());
+            #[cfg(desktop)]
+            {
+                let state = SettingsState::load(app.handle());
+                let current = state.get();
+                app.manage(state);
+                let hidden = std::env::args().any(|arg| arg == AUTOSTART_ARG);
+                open_window(app.handle(), &current, hidden)?;
+                tray::create(app.handle())?;
+                settings::apply(app.handle(), &current);
+                updates::start(app.handle());
+            }
+            #[cfg(mobile)]
+            window(app.handle()).build()?;
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -119,6 +154,7 @@ fn window_event(window: &Window, event: &WindowEvent) {
     let app = window.app_handle();
     match event {
         WindowEvent::Focused(focused) => eval_in(app, &format!("window.ecdhWindowFocused?.({focused})")),
+        #[cfg(desktop)]
         WindowEvent::Resized(_) => {
             let maximized = window.is_maximized().unwrap_or(false);
             eval_in(app, &format!("document.documentElement.classList.toggle('app-maximized', {maximized})"));
@@ -128,6 +164,7 @@ fn window_event(window: &Window, event: &WindowEvent) {
                 eval_in(app, "window.ecdhWindowFocused?.(false)");
             }
         }
+        #[cfg(desktop)]
         WindowEvent::CloseRequested { api, .. } => {
             api.prevent_close();
             let state = app.state::<SettingsState>();
@@ -151,6 +188,7 @@ fn window_event(window: &Window, event: &WindowEvent) {
 }
 
 // The title bar's own buttons. Closing goes through the same path as Alt+F4.
+#[cfg(desktop)]
 #[tauri::command]
 fn window_action(window: WebviewWindow, action: &str) -> Result<(), String> {
     match action {
@@ -168,10 +206,9 @@ fn window_action(window: WebviewWindow, action: &str) -> Result<(), String> {
     .map_err(|e| e.to_string())
 }
 
+#[cfg(desktop)]
 fn open_window(app: &AppHandle, settings: &settings::Settings, hidden: bool) -> tauri::Result<()> {
-    let links = app.clone();
-    let popups = app.clone();
-    WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::App("index.html".into()))
+    window(app)
         .title("ecdh.chat")
         .inner_size(820.0, 700.0)
         .min_inner_size(520.0, 520.0)
@@ -182,6 +219,16 @@ fn open_window(app: &AppHandle, settings: &settings::Settings, hidden: bool) -> 
         .content_protected(settings.block_screenshots)
         // Lets the page take dropped files itself, like it does in a browser.
         .disable_drag_drop_handler()
+        .build()?;
+    Ok(())
+}
+
+// The window with the app's page, as both the desktop and the phone app open it. On a phone it
+// fills the screen, and the app's activity keeps it out of screenshots (MainActivity.kt).
+fn window(app: &AppHandle) -> WebviewWindowBuilder<'_, tauri::Wry, AppHandle> {
+    let links = app.clone();
+    let popups = app.clone();
+    WebviewWindowBuilder::new(app, WINDOW, WebviewUrl::App("index.html".into()))
         .initialization_script(format!("window.__ECDH_SERVER__ = {};window.__ECDH_OS__ = {};", js_string(SERVER), js_string(std::env::consts::OS)))
         // The window only ever shows the app's own page. Links from messages open in the browser.
         .on_navigation(move |url| {
@@ -196,16 +243,19 @@ fn open_window(app: &AppHandle, settings: &settings::Settings, hidden: bool) -> 
             NewWindowResponse::Deny
         })
         .on_page_load(|window, payload| {
-            if payload.event() != PageLoadEvent::Finished {
-                return;
-            }
-            let pending = window.state::<PendingInvite>().0.lock().unwrap().take();
+            let state = window.state::<InviteState>();
+            let pending = {
+                let mut invites = state.0.lock().unwrap();
+                invites.page_ready = payload.event() == PageLoadEvent::Finished;
+                if !invites.page_ready {
+                    return;
+                }
+                invites.pending.take()
+            };
             if let Some(fragment) = pending {
                 open_invite(window.app_handle(), &fragment);
             }
         })
-        .build()?;
-    Ok(())
 }
 
 fn is_app_page(url: &Url) -> bool {
@@ -233,7 +283,22 @@ fn invite(urls: &[Url]) -> Option<String> {
     })
 }
 
+// Hands an invite to the page now, or holds it until the page has loaded (see InviteState).
+fn deliver_invite(app: &AppHandle, fragment: String) {
+    let state = app.state::<InviteState>();
+    {
+        let mut invites = state.0.lock().unwrap();
+        if !invites.page_ready {
+            invites.pending = Some(fragment);
+            return;
+        }
+    }
+    open_invite(app, &fragment);
+}
+
 fn open_invite(app: &AppHandle, fragment: &str) {
+    // On a phone the app is already in front when a link opens it.
+    #[cfg(desktop)]
     show(app);
     eval_in(app, &format!("window.ecdhOpenInvite?.({})", js_string(fragment)));
 }
@@ -244,6 +309,7 @@ pub(crate) fn eval_in(app: &AppHandle, script: &str) {
     }
 }
 
+#[cfg(desktop)]
 pub(crate) fn show(app: &AppHandle) {
     if let Some(window) = app.get_webview_window(WINDOW) {
         let _ = window.unminimize();

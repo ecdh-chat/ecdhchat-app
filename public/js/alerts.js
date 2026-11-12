@@ -1,7 +1,7 @@
 // Sounds and notifications for when the tab is in the background. Notifications never include
 // what was said, only that something arrived.
 
-import { inBackground } from './platform.js';
+import { appOs, inBackground } from './platform.js';
 
 const SOUND = 'alertSound';
 const NOTIFY = 'alertNotify';
@@ -66,7 +66,13 @@ function alert(body, chimes) {
     if (sound) chime(chimes);
     if (!notify) return;
     try {
-        const notification = new Notification('ecdh.chat', { body, tag: 'ecdh-chat' });
+        // The phone app names its status-bar icon (a drawable in the app, ic_notification.xml;
+        // otherwise Android shows a generic one) and its "messages" channel, which pops alerts up
+        // on screen (MainActivity.kt).
+        const options = appOs === 'android'
+            ? { body, tag: 'ecdh-chat', icon: 'ic_notification', channelId: 'messages' }
+            : { body, tag: 'ecdh-chat' };
+        const notification = new Notification('ecdh.chat', options);
         notification.onclick = () => {
             window.focus();
             notification.close();

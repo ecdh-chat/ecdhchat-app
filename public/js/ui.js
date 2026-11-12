@@ -5,7 +5,7 @@ import { el, icon } from './dom.js';
 import { EMOJI_CATEGORIES } from './emoji.js';
 import { emojiOnly, parse } from './format.js';
 import { REACTIONS } from './messages.js';
-import { appInvoke, appOs, inBackground, isApp, onForeground, serverOrigin } from './platform.js';
+import { appInvoke, appOs, inBackground, isApp, isDesktopApp, onForeground, serverOrigin } from './platform.js';
 import { TransferMeter, timeLeft } from './transfer.js';
 import { addImage, forgetImages, initViewer, resetViewer } from './viewer.js';
 import { formatDuration, voicePlayer } from './voice-player.js';
@@ -298,7 +298,7 @@ export function init(callbacks) {
     onForeground(() => {
         unread = 0;
         document.title = 'ecdh.chat';
-        appInvoke('set_unread', { count: 0 });
+        if (isDesktopApp) appInvoke('set_unread', { count: 0 });
         // The divider stays where it is, but the next time away starts a new one.
         dividerSessionOpen = false;
         handlers.onForeground();
@@ -659,7 +659,7 @@ export function noteIncoming() {
     markNewMessages();
     unread++;
     document.title = `(${unread}) ecdh.chat`;
-    appInvoke('set_unread', { count: unread });
+    if (isDesktopApp) appInvoke('set_unread', { count: unread });
 }
 
 export function openSettings() {

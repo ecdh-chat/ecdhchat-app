@@ -9,6 +9,7 @@ const $ = (id) => document.getElementById(id);
 let settings = {};
 let shielded = false;
 let answer = null;
+let askReady = false;
 
 // busy: whether a chat is starting or open. leave: ends it politely. newChat: starts over.
 export async function initDesktop({ busy, leave, newChat, openSettings }) {
@@ -63,9 +64,6 @@ export async function initDesktop({ busy, leave, newChat, openSettings }) {
         event.preventDefault();
     });
 
-    $('appConfirmButton').addEventListener('click', () => settle(true));
-    $('appConfirmDialog').addEventListener('close', () => settle(false));
-
     // Called by the Rust side for the tray's Quit, and for closing the window when it doesn't
     // keep running in the tray.
     window.ecdhRequestQuit = async () => {
@@ -93,8 +91,14 @@ export async function initDesktop({ busy, leave, newChat, openSettings }) {
     });
 }
 
-// Asks before something that ends the chat. Resolves to true only if the person confirms.
+// Asks before something that ends the chat. Resolves to true only if the person confirms. The
+// phone app uses it too (opening an invite during a chat), without the rest of initDesktop.
 export function ask(title, text, button) {
+    if (!askReady) {
+        askReady = true;
+        $('appConfirmButton').addEventListener('click', () => settle(true));
+        $('appConfirmDialog').addEventListener('close', () => settle(false));
+    }
     settle(false);
     $('appConfirmTitle').textContent = title;
     $('appConfirmText').textContent = text;

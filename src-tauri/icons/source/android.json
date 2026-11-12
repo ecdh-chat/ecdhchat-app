@@ -1,0 +1,7 @@
+{
+  "default": "../../../public/favicon.svg",
+  "bg_color": "#18181b",
+  "android_fg": "android-foreground.svg",
+  "android_fg_scale": 100,
+  "android_monochrome": "android-monochrome.svg"
+}

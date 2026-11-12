@@ -7,7 +7,7 @@ import { plainText } from './format.js';
 import { cleanImage } from './images.js';
 import { startRecording, voiceMessageName } from './media.js';
 import { FEATURES, MessageType, NO_CALLS, encode, encodeChunk, encodeTyping, encodeVerified, randomId } from './messages.js';
-import { callsAvailable, inviteFragment, isApp, isMobileBrowser, rtcAvailable, serverOrigin } from './platform.js';
+import { callsAvailable, inviteFragment, isApp, isDesktopApp, mediaPermissionHint, offersRelay, rtcAvailable, serverOrigin } from './platform.js';
 import { decodeBase64Url, encodeBase64Url, randomSecret } from './secure-channel.js';
 import { connectSignaling } from './signaling.js';
 import { initTheme } from './theme.js';
@@ -87,6 +87,8 @@ window.addEventListener('pagehide', () => {
 if (isApp) {
     // The Rust side calls this when someone opens an ecdhchat:// invite link with the app.
     window.ecdhOpenInvite = (link) => pasteInvite(link);
+}
+if (isDesktopApp) {
     initDesktop({ busy: chatBusy, leave: leaveChat, newChat: () => location.assign('/'), openSettings: ui.openSettings });
 }
 start();
@@ -145,9 +147,11 @@ async function openInvite(fragment) {
 }
 
 function chatBusy() {
-    // 'inviting' counts too: a link has been created and maybe shared, so replacing it silently
-    // would leave the other person with a dead link.
-    return phase === 'inviting' || phase === 'connecting' || phase === 'open';
+    // An invite counts too once its link is on screen (roomId is set when the server creates the
+    // room): it may have been shared, so replacing it silently would leave the other person with a
+    // dead link. Before that there's nothing to lose, which matters when the app is started by an
+    // invite link: its page begins making a room of its own before the link is handed over.
+    return (phase === 'inviting' && roomId !== null) || phase === 'connecting' || phase === 'open';
 }
 
 // Says goodbye so the other person sees the chat end right away, not after a timeout.
@@ -177,7 +181,7 @@ async function join() {
 // used when a direct connection fails, and it only ever carries encrypted data. Computers and
 // the desktop app always connect directly.
 async function relayChoice() {
-    if (!isMobileBrowser()) return false;
+    if (!offersRelay()) return false;
     const saved = savedRelayChoice();
     if (saved !== null) return saved;
 
@@ -818,7 +822,7 @@ async function record(action) {
         try {
             recording = await startRecording();
         } catch {
-            ui.addSystem('Couldn’t use your microphone. Check this site’s permissions in your browser.');
+            ui.addSystem(`Couldn’t use your microphone. ${mediaPermissionHint}`);
             return;
         } finally {
             recordingStarting = false;

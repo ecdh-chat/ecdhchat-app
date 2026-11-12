@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="referrer" content="no-referrer">
-    <meta name="description" content="Download the ecdh.chat desktop app for Windows and Linux: private, peer-to-peer chat, encrypted end to end.">
-    <title>Download ecdh.chat for Windows and Linux</title>
+    <meta name="description" content="Download the ecdh.chat app for Windows, Linux and Android: private, peer-to-peer chat, encrypted end to end.">
+    <title>Download ecdh.chat for Windows, Linux and Android</title>
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -37,8 +37,8 @@
         <section class="dl-hero">
             <div class="wrap">
                 <p class="kicker" id="release">Latest version</p>
-                <h1>ecdh.chat for your computer</h1>
-                <p class="lead">The same private chat as a small, fast desktop app for Windows and Linux. It carries its own code and keeps your chat open in the tray.</p>
+                <h1>ecdh.chat for your computer and phone</h1>
+                <p class="lead">The same private chat as a small, fast app for Windows, Linux and Android. It carries its own code, and on a computer it keeps your chat open in the tray.</p>
             </div>
         </section>
 
@@ -90,6 +90,21 @@
                             <div class="command"><code><span>sha256sum ecdh.chat-x86_64.AppImage</span></code></div>
                         </div>
                     </li>
+                    <li class="release" data-os="android" data-installer="android">
+                        <div class="release-head">
+                            <div>
+                                <h2 class="titled"><span class="tag">[AND]</span><span class="title">Android</span></h2>
+                                <p class="muted">Android 7 and newer · phones and tablets<span class="release-data"> · <span data-version>–</span> · <span data-size>–</span></span></p>
+                            </div>
+                            <a class="button primary" href="/downloads/android/ecdh.chat.apk" download>Download for Android</a>
+                        </div>
+                        <div class="release-how">
+                            <p class="muted">Open the downloaded file. The first time, Android asks you to allow your browser to install apps. The app isn’t in Google Play yet, so Play Protect may warn you about an app it doesn’t know: choose Install anyway. Messages arrive while the app is open.</p>
+                            <p class="hash" hidden>SHA-256 <code data-hash></code></p>
+                            <p class="hash" data-cert-line hidden>Signing certificate SHA-256 <code data-cert></code></p>
+                            <div class="command"><code><span>apksigner verify --print-certs ecdh.chat.apk</span></code></div>
+                        </div>
+                    </li>
                 </ul>
                 <p class="fine">Calls aren’t in the Linux app yet; for calls, open ecdh.chat in a browser.</p>
             </div>
@@ -126,7 +141,7 @@
         <section class="dl-section last">
             <div class="wrap">
                 <p class="dl-line">Rather build it yourself? The full source is public under GPL-3.0. <a href="https://github.com/ecdh-chat/ecdhchat-app" rel="noopener">View the source ↗</a></p>
-                <p class="dl-line">No app for macOS, Android or iOS yet. ecdh.chat works in any up-to-date browser. <a href="/">Open the web app →</a></p>
+                <p class="dl-line">No app for macOS or iOS yet. ecdh.chat works in any up-to-date browser. <a href="/">Open the web app →</a></p>
             </div>
         </section>
     </main>

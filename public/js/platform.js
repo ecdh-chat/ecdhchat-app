@@ -1,14 +1,19 @@
-// The same page runs as the website and inside the desktop app. The website is served by the
-// signaling server itself; the app loads the page from its own files, and its Rust side tells
-// it which server to use (window.__ECDH_SERVER__) before any script on the page runs.
+// The same page runs as the website, inside the desktop app and inside the phone app. The website
+// is served by the signaling server itself; the app loads the page from its own files, and its
+// Rust side tells it which server to use (window.__ECDH_SERVER__) before any script on the page
+// runs.
 
 import { BridgePeerConnection } from './rtc-bridge.js';
 
 const INVITE_FRAGMENT = /^#?([0-9a-f-]{36}\.[A-Za-z0-9_-]{22})$/;
 
 export const isApp = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-// The app's operating system as Rust names it ("windows", "linux"), or null on the website.
+// The app's operating system as Rust names it ("windows", "linux", "android"), or null on the
+// website.
 export const appOs = (isApp && window.__ECDH_OS__) || null;
+// The phone app. It has none of the desktop app's window, tray, settings or self-updates.
+export const isMobileApp = appOs === 'android' || appOs === 'ios';
+export const isDesktopApp = isApp && !isMobileApp;
 
 // WebKitGTK, which the app runs in on Linux, has no WebRTC, so there the connection runs in the
 // app's Rust side (rtc-bridge.js).
@@ -16,8 +21,18 @@ export const usesRtcBridge = isApp && !window.RTCPeerConnection;
 // The bridge carries the chat but no media yet.
 export const callsAvailable = !usesRtcBridge;
 
-// Phones and tablets. On mobile data they usually can't connect directly, so they're the only
-// ones offered the relay. The desktop app never is.
+// Where to look when the microphone or camera can't be used: the browser's site permissions, or in
+// the apps the system's own settings.
+export const mediaPermissionHint = isApp
+    ? 'Check that ecdh.chat may use them in your device’s settings.'
+    : 'Check this site’s permissions in your browser.';
+
+// Phones and tablets, in a browser or the phone app. On mobile data they usually can't connect
+// directly, so they're the only ones offered the relay. The desktop app never is.
+export function offersRelay() {
+    return isMobileApp || isMobileBrowser();
+}
+
 export function isMobileBrowser(nav = typeof navigator !== 'undefined' ? navigator : null) {
     if (isApp || !nav) return false;
     if (typeof nav.userAgentData?.mobile === 'boolean' && nav.userAgentData.mobile) return true;
@@ -48,7 +63,8 @@ if (isApp) {
 }
 
 // Calls one of the app's Rust commands. Only the commands allowed in
-// src-tauri/capabilities/default.json go through. On the website it does nothing.
+// src-tauri/capabilities/desktop.json (mobile.json in the phone app) go through. On the website it
+// does nothing.
 export function appInvoke(command, args = {}) {
     return isApp ? window.__TAURI_INTERNALS__.invoke(command, args) : Promise.resolve();
 }

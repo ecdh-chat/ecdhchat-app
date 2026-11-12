@@ -2,6 +2,7 @@ import * as alerts from './alerts.js';
 import { CALL_RING_TIMEOUT_MS } from './config.js';
 import { getCallMedia, getScreenMedia } from './media.js';
 import { MessageType, encode } from './messages.js';
+import { mediaPermissionHint } from './platform.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -91,7 +92,7 @@ export class Call {
             this.local = await getCallMedia(video);
         } catch {
             this.reset();
-            this.onSystem('Couldn’t use your microphone or camera. Check this site’s permissions in your browser.');
+            this.onSystem(`Couldn’t use your microphone or camera. ${mediaPermissionHint}`);
             return;
         }
         if (this.state !== 'outgoing') return this.stopLocal();
@@ -153,7 +154,7 @@ export class Call {
         } catch {
             this.send('decline');
             this.reset();
-            this.onSystem('Couldn’t use your microphone or camera. Check this site’s permissions in your browser.');
+            this.onSystem(`Couldn’t use your microphone or camera. ${mediaPermissionHint}`);
             return;
         }
         if (this.state !== 'incoming') return this.stopLocal();

@@ -1,7 +1,8 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
-  "identifier": "default",
-  "description": "What the page may ask the app to do: notifications, its own settings, window controls, unread alerts, installing an update the person agreed to, copying text, quitting, and WebRTC through the app where the webview has none (src/rtc.rs). Links, invites and the tray are handled on the Rust side.",
+  "identifier": "desktop",
+  "platforms": ["windows", "linux", "macOS"],
+  "description": "What the desktop app's page may ask the app to do: notifications, its own settings, window controls, unread alerts, installing an update the person agreed to, copying text, quitting, and WebRTC through the app where the webview has none (src/rtc.rs). Links, invites and the tray are handled on the Rust side.",
   "windows": ["main"],
   "permissions": [
     "notification:default",

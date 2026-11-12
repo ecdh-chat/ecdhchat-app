@@ -5,9 +5,10 @@ initThemeToggle(document.getElementById('themeToggle'));
 
 const downloads = document.getElementById('downloads');
 if (downloads) {
-    if (/Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent)) {
-        const windows = downloads.querySelector('[data-os="windows"]');
-        for (const linux of downloads.querySelectorAll('[data-os="linux"]')) windows.before(linux);
+    const first = /Android/.test(navigator.userAgent) ? 'android' : /Linux/.test(navigator.userAgent) ? 'linux' : null;
+    if (first) {
+        const top = downloads.firstElementChild;
+        for (const tile of downloads.querySelectorAll(`[data-os="${first}"]`)) top.before(tile);
     }
     showInstallers();
 }
@@ -60,10 +61,17 @@ async function showInstallers() {
     for (const details of document.querySelectorAll('[data-installer]')) {
         const installer = release[details.dataset.installer];
         if (!/^[0-9a-f]{64}$/.test(installer?.sha256) || !Number.isInteger(installer.size)) continue;
-        details.querySelector('[data-version]').textContent = release.version;
+        // The Android app can be released on its own, so it carries its own version.
+        details.querySelector('[data-version]').textContent = /^\d+\.\d+\.\d+$/.test(installer.version) ? installer.version : release.version;
         details.querySelector('[data-size]').textContent = `${(installer.size / 1024 / 1024).toFixed(1)} MB`;
         details.querySelector('[data-hash]').textContent = installer.sha256;
         details.querySelector('.hash').hidden = false;
+        // Android only installs an update signed with the same key, and this names that key.
+        const cert = details.querySelector('[data-cert]');
+        if (cert && /^[0-9a-f]{64}$/.test(installer.certSha256)) {
+            cert.textContent = installer.certSha256;
+            details.querySelector('[data-cert-line]').hidden = false;
+        }
         details.classList.add('listed');
     }
 }
